@@ -43,7 +43,7 @@ The other two levels run on every push/PR via `.github/workflows/ci.yml`.
 ## Running locally
 
 ```bash
-docker compose up -d                 # Postgres 15 + Redis 7 (creds in server/env.example)
+docker compose up -d                 # Postgres 15 + Redis 7 (creds in server/.env.example)
 cd server && npm test                # unit (fast, no infra)
 cd server && npm run test:cov        # unit + coverage
 cd server && npm run test:e2e        # integration (needs the containers up)

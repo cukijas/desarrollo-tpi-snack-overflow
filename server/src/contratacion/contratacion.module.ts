@@ -3,11 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmUserRepository } from '../auth/adapters/typeorm-user.repository.js';
 import { User } from '../auth/domain/user.entity.js';
 import { USER_REPOSITORY } from '../auth/ports/user.repository.port.js';
+import { StateMachineModule } from '../state-machine/state-machine.module.js';
 import { TypeOrmContratacionRepository } from './adapters/typeorm-contratacion.repository.js';
 import { ContratacionService } from './application/contratacion.service.js';
 import { ContratacionController } from './contratacion.controller.js';
 import { Contratacion } from './domain/contratacion.entity.js';
-import { ContratacionEstado } from './domain/contratacion-estado.enum.js';
 import {
   AVAILABILITY_SERVICE,
   type IAvailabilityService,
@@ -16,10 +16,6 @@ import {
   CONTRATACION_REPOSITORY,
   type IContratacionRepository,
 } from './ports/contratacion-repository.port.js';
-import {
-  STATE_MACHINE,
-  type IContratacionStateMachine,
-} from './ports/state-machine.port.js';
 
 /**
  * Stub adapter for AvailabilityService — no-op until UC06 (agenda) is implemented.
@@ -47,19 +43,11 @@ class StubAvailabilityService implements IAvailabilityService {
   }
 }
 
-/**
- * Stub adapter for ContratacionStateMachine — no-op until UC09 is implemented.
- */
-class StubStateMachine implements IContratacionStateMachine {
-  private readonly logger = new Logger(StubStateMachine.name);
-
-  async transitionTo(_contratacionId: string, _estado: ContratacionEstado): Promise<void> {
-    this.logger.warn('STUB: transitionTo is a no-op — UC09 not yet implemented');
-  }
-}
-
 @Module({
-  imports: [TypeOrmModule.forFeature([Contratacion, User])],
+  imports: [
+    TypeOrmModule.forFeature([Contratacion, User]),
+    StateMachineModule,
+  ],
   controllers: [ContratacionController],
   providers: [
     ContratacionService,
@@ -76,10 +64,6 @@ class StubStateMachine implements IContratacionStateMachine {
     {
       provide: AVAILABILITY_SERVICE,
       useClass: StubAvailabilityService,
-    },
-    {
-      provide: STATE_MACHINE,
-      useClass: StubStateMachine,
     },
   ],
 })

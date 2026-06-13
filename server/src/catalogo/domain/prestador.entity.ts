@@ -30,7 +30,12 @@ export class Prestador {
   @Column('varchar', { length: 100, name: 'categoria' })
   categoria!: string;
 
-  @Column('decimal', { precision: 3, scale: 1, name: 'calificacion_promedio', default: 0 })
+  @Column('decimal', {
+    precision: 3,
+    scale: 1,
+    name: 'calificacion_promedio',
+    default: 0,
+  })
   calificacionPromedio!: number;
 
   @Column('int', { name: 'cantidad_resenas', default: 0 })
@@ -56,7 +61,10 @@ export class Prestador {
 
   @Column('jsonb', { name: 'disponibilidad_resumen', nullable: true })
   disponibilidadResumen!: {
-    estado: 'disponible_esta_semana' | 'proxima_disponible' | 'sin_disponibilidad';
+    estado:
+      | 'disponible_esta_semana'
+      | 'proxima_disponible'
+      | 'sin_disponibilidad';
     proximaFecha?: string;
     franjasDisponiblesProximos7Dias?: number;
   } | null;

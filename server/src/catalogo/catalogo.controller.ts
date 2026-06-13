@@ -22,7 +22,13 @@ export class CatalogoController {
    */
   @Get('prestadores')
   async buscarPrestadores(
-    @Query(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }))
+    @Query(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
     dto: BuscarPrestadoresDto,
   ) {
     return this.buscadorService.buscar(dto);

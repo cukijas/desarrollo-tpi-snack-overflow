@@ -1,7 +1,25 @@
-import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PRESTADOR_REPOSITORY, type IPrestadorRepository, type BusquedaCriteria, type PaginatedResult } from '../ports/prestador-repository.port.js';
-import { GEOCODING_SERVICE, type IGeocodingService, type Coordenadas } from '../ports/geocoding.port.js';
-import { IRankingStrategy, RankingContext, RankingStrategyType } from '../domain/ranking-strategy.interface.js';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  PRESTADOR_REPOSITORY,
+  type IPrestadorRepository,
+  type BusquedaCriteria,
+  type PaginatedResult,
+} from '../ports/prestador-repository.port.js';
+import {
+  GEOCODING_SERVICE,
+  type IGeocodingService,
+  type Coordenadas,
+} from '../ports/geocoding.port.js';
+import {
+  IRankingStrategy,
+  RankingContext,
+  RankingStrategyType,
+} from '../domain/ranking-strategy.interface.js';
 import { RankingPorCalificacionStrategy } from '../domain/ranking/ranking-por-calificacion.strategy.js';
 import { RankingPorDistanciaStrategy } from '../domain/ranking/ranking-por-distancia.strategy.js';
 import { RankingPorDisponibilidadStrategy } from '../domain/ranking/ranking-por-disponibilidad.strategy.js';
@@ -29,7 +47,9 @@ export class BuscadorService {
     ]);
   }
 
-  async buscar(dto: BuscarPrestadoresDto): Promise<PaginatedResult<PrestadorResumen>> {
+  async buscar(
+    dto: BuscarPrestadoresDto,
+  ): Promise<PaginatedResult<PrestadorResumen>> {
     // Validate required fields (ESC-07)
     if (!dto.oficio || !dto.oficio.trim()) {
       throw new BadRequestException('El oficio es obligatorio');
@@ -43,7 +63,12 @@ export class BuscadorService {
 
     if (!coordenadas) {
       // Geocoding failed — return empty results rather than error
-      return { data: [], total: 0, page: dto.page ?? 1, pageSize: dto.pageSize ?? 20 };
+      return {
+        data: [],
+        total: 0,
+        page: dto.page ?? 1,
+        pageSize: dto.pageSize ?? 20,
+      };
     }
 
     // Build search criteria

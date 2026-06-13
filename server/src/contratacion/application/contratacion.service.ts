@@ -11,7 +11,10 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { UserStatus } from '../../auth/domain/user-status.enum.js';
-import { USER_REPOSITORY, type IUserRepository } from '../../auth/ports/user.repository.port.js';
+import {
+  USER_REPOSITORY,
+  type IUserRepository,
+} from '../../auth/ports/user.repository.port.js';
 import { Contratacion } from '../domain/contratacion.entity.js';
 import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 import { CreateContratacionDto } from '../dto/create-contratacion.dto.js';
@@ -25,7 +28,10 @@ import {
   CONTRATACION_REPOSITORY,
   type IContratacionRepository,
 } from '../ports/contratacion-repository.port.js';
-import { STATE_MACHINE, type IContratacionStateMachine } from '../ports/state-machine.port.js';
+import {
+  STATE_MACHINE,
+  type IContratacionStateMachine,
+} from '../ports/state-machine.port.js';
 
 @Injectable()
 export class ContratacionService {
@@ -38,7 +44,8 @@ export class ContratacionService {
     private readonly contratacionRepo: IContratacionRepository,
     @Inject(AVAILABILITY_SERVICE)
     private readonly availabilityService: IAvailabilityService,
-    @Inject(STATE_MACHINE) private readonly stateMachine: IContratacionStateMachine,
+    @Inject(STATE_MACHINE)
+    private readonly stateMachine: IContratacionStateMachine,
   ) {}
 
   /**
@@ -66,7 +73,9 @@ export class ContratacionService {
   ): Promise<ContratacionResponseDto> {
     // ── Authorization gate (RNF-S.1 / RN-CON-01) ──
     if (clienteRole !== UserRole.CLIENTE) {
-      throw new ForbiddenException('Only authenticated clients can create contrataciones.');
+      throw new ForbiddenException(
+        'Only authenticated clients can create contrataciones.',
+      );
     }
 
     // ── Step 1: Validate prestador exists and is active (RN-CON-05) ──
@@ -132,7 +141,10 @@ export class ContratacionService {
       slotReserved = true;
 
       // ── Step 7: Invoke UC09 state machine → estado solicitada (RN-CON-03) ──
-      await this.stateMachine.transitionTo(saved.id, ContratacionEstado.SOLICITADA);
+      await this.stateMachine.transitionTo(
+        saved.id,
+        ContratacionEstado.SOLICITADA,
+      );
 
       // ── Commit ──
       await queryRunner.commitTransaction();
@@ -161,8 +173,14 @@ export class ContratacionService {
       // ── Compensating action: release slot if it was reserved ──
       if (slotReserved) {
         try {
-          await this.availabilityService.release(dto.prestadorId, dto.fecha, dto.franja);
-          this.logger.warn(`SLOT_RELEASED prestadorId=${dto.prestadorId} fecha=${dto.fecha} franja=${dto.franja}`);
+          await this.availabilityService.release(
+            dto.prestadorId,
+            dto.fecha,
+            dto.franja,
+          );
+          this.logger.warn(
+            `SLOT_RELEASED prestadorId=${dto.prestadorId} fecha=${dto.fecha} franja=${dto.franja}`,
+          );
         } catch {
           this.logger.error('SLOT_RELEASE_FAILED after rollback');
         }

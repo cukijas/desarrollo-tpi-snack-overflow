@@ -9,7 +9,11 @@ export class PrestadorResumen {
   oficios!: string[];
   calificacionPromedio!: number;
   cantidadResenas!: number;
-  disponibilidad!: 'disponible_esta_semana' | 'proxima_disponible' | 'sin_disponibilidad' | null;
+  disponibilidad!:
+    | 'disponible_esta_semana'
+    | 'proxima_disponible'
+    | 'sin_disponibilidad'
+    | null;
   proximaFechaDisponible?: string;
   franjasDisponiblesProximos7Dias?: number;
   distanciaKm?: number;

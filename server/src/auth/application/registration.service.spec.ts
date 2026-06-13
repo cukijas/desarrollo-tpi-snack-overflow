@@ -13,14 +13,19 @@ import { UserStatus } from '../domain/user-status.enum.js';
 import { RegisterDto } from '../dto/register.dto.js';
 import type { User } from '../domain/user.entity.js';
 import type { RegulatedTrade } from '../domain/regulated-trade.entity.js';
-import type { IUserRepository, CreateUserData } from '../ports/user.repository.port.js';
+import type {
+  IUserRepository,
+  CreateUserData,
+} from '../ports/user.repository.port.js';
 import type { IRegulatedTradeRepository } from '../ports/regulated-trade.repository.port.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeUser(overrides: Partial<User> & { passwordHash?: string } = {}): User {
+function makeUser(
+  overrides: Partial<User> & { passwordHash?: string } = {},
+): User {
   return {
     id: 'user-uuid-1',
     name: 'Juan',
@@ -34,16 +39,18 @@ function makeUser(overrides: Partial<User> & { passwordHash?: string } = {}): Us
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as User;
+  };
 }
 
-function makeRegulatedTrade(overrides: Partial<RegulatedTrade> = {}): RegulatedTrade {
+function makeRegulatedTrade(
+  overrides: Partial<RegulatedTrade> = {},
+): RegulatedTrade {
   return {
     id: 'trade-uuid-1',
     tradeName: 'gasista',
     createdAt: new Date(),
     ...overrides,
-  } as RegulatedTrade;
+  };
 }
 
 function makeRegisterDto(overrides: Partial<RegisterDto> = {}): RegisterDto {
@@ -99,7 +106,7 @@ describe('RegistrationService.register()', () => {
     expect(result.message).toBe('Account created successfully.');
 
     // Email lowercased (design §3.1 step 1)
-    const createData = userRepo.create.mock.calls[0][0] as CreateUserData;
+    const createData = userRepo.create.mock.calls[0][0];
     expect(createData.email).toBe('juan@example.com');
 
     // regulatedTradeRepo was NOT called for cliente
@@ -113,10 +120,13 @@ describe('RegistrationService.register()', () => {
     const createdUser = makeUser({ role: UserRole.CLIENTE });
     userRepo.create.mockResolvedValue(createdUser);
 
-    const dto = makeRegisterDto({ role: UserRole.CLIENTE, password: 'MySecure1' });
+    const dto = makeRegisterDto({
+      role: UserRole.CLIENTE,
+      password: 'MySecure1',
+    });
     await service.register(dto);
 
-    const createData = userRepo.create.mock.calls[0][0] as CreateUserData;
+    const createData = userRepo.create.mock.calls[0][0];
     expect(createData.passwordHash).toMatch(/^\$argon2id\$/);
     expect(createData.passwordHash).not.toBe('MySecure1');
   });
@@ -199,7 +209,9 @@ describe('RegistrationService.register()', () => {
   // ESC-06 (OCL §6.1): 409 response must NOT reveal account details
   it('ESC-06 (OCL §6.1): 409 message does not reveal account status or role', async () => {
     const { service, userRepo } = makeMocks();
-    userRepo.findByEmail.mockResolvedValue(makeUser({ role: UserRole.PRESTADOR, status: UserStatus.SUSPENDIDO }));
+    userRepo.findByEmail.mockResolvedValue(
+      makeUser({ role: UserRole.PRESTADOR, status: UserStatus.SUSPENDIDO }),
+    );
 
     const dto = makeRegisterDto();
     let error: Error | null = null;
@@ -235,7 +247,10 @@ describe('RegistrationService.register()', () => {
   it('OCL §6.1: cliente providerStatus is always null even if trade is sent', async () => {
     const { service, userRepo, regulatedTradeRepo } = makeMocks();
     userRepo.findByEmail.mockResolvedValue(null);
-    const createdUser = makeUser({ role: UserRole.CLIENTE, providerStatus: null });
+    const createdUser = makeUser({
+      role: UserRole.CLIENTE,
+      providerStatus: null,
+    });
     userRepo.create.mockResolvedValue(createdUser);
 
     const dto = makeRegisterDto({

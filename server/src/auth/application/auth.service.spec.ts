@@ -4,7 +4,12 @@
  *
  * All ports are mocked in-memory; no DB or Redis required.
  */
-import { ForbiddenException, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { AuthService } from './auth.service.js';
@@ -36,7 +41,9 @@ function makeUser(overrides: Partial<User> = {}): User {
   } as User;
 }
 
-function makeToken(overrides: Partial<PasswordResetToken> = {}): PasswordResetToken {
+function makeToken(
+  overrides: Partial<PasswordResetToken> = {},
+): PasswordResetToken {
   return {
     id: 'token-uuid-1',
     userId: 'user-uuid-1',
@@ -46,7 +53,7 @@ function makeToken(overrides: Partial<PasswordResetToken> = {}): PasswordResetTo
     createdAt: new Date(),
     user: null as any,
     ...overrides,
-  } as PasswordResetToken;
+  };
 }
 
 function makeMocks() {
@@ -86,7 +93,14 @@ function makeMocks() {
     jwtService,
   );
 
-  return { service, userRepo, attemptStore, tokenStore, emailNotifier, jwtService };
+  return {
+    service,
+    userRepo,
+    attemptStore,
+    tokenStore,
+    emailNotifier,
+    jwtService,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -153,13 +167,20 @@ describe('AuthService.login()', () => {
   it('ESC-02: cliente → JWT does NOT include providerStatus claim', async () => {
     const { service, userRepo, attemptStore, jwtService } = makeMocks();
     const hash = await argon2.hash('secret');
-    const user = makeUser({ role: UserRole.CLIENTE, providerStatus: null, passwordHash: hash });
+    const user = makeUser({
+      role: UserRole.CLIENTE,
+      providerStatus: null,
+      passwordHash: hash,
+    });
     userRepo.findByEmail.mockResolvedValue(user);
     attemptStore.isLocked.mockResolvedValue(false);
 
     await service.login('cliente@example.com', 'secret');
 
-    const signArg = (jwtService.sign as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    const signArg = (jwtService.sign as jest.Mock).mock.calls[0][0] as Record<
+      string,
+      unknown
+    >;
     expect(signArg).not.toHaveProperty('providerStatus');
   });
 
@@ -172,7 +193,9 @@ describe('AuthService.login()', () => {
     attemptStore.isLocked.mockResolvedValue(false);
     attemptStore.increment.mockResolvedValue(2); // simulating 2nd failure
 
-    await expect(service.login('user@example.com', 'wrong')).rejects.toThrow(UnauthorizedException);
+    await expect(service.login('user@example.com', 'wrong')).rejects.toThrow(
+      UnauthorizedException,
+    );
 
     // OCL §6.1: counter incremented
     expect(attemptStore.increment).toHaveBeenCalledWith(user.id);
@@ -189,7 +212,9 @@ describe('AuthService.login()', () => {
     attemptStore.isLocked.mockResolvedValue(false);
     attemptStore.increment.mockResolvedValue(5); // 5th failure
 
-    const err = await service.login('user@example.com', 'wrong').catch((e) => e);
+    const err = await service
+      .login('user@example.com', 'wrong')
+      .catch((e) => e);
 
     expect(err).toBeInstanceOf(HttpException);
     expect((err as HttpException).getStatus()).toBe(HttpStatus.LOCKED); // 423
@@ -205,7 +230,9 @@ describe('AuthService.login()', () => {
     const user = makeUser({ status: UserStatus.SUSPENDIDO });
     userRepo.findByEmail.mockResolvedValue(user);
 
-    await expect(service.login('user@example.com', 'anything')).rejects.toThrow(ForbiddenException);
+    await expect(service.login('user@example.com', 'anything')).rejects.toThrow(
+      ForbiddenException,
+    );
 
     // OCL §6.1: attemptStore was NOT touched for the user
     expect(attemptStore.increment).not.toHaveBeenCalledWith(user.id);
@@ -218,10 +245,15 @@ describe('AuthService.login()', () => {
   it('ESC-05: suspension check happens before password verification (order)', async () => {
     const { service, userRepo, attemptStore } = makeMocks();
     // User has suspended status — even with a WRONG password the error is 403 not 401
-    const user = makeUser({ status: UserStatus.SUSPENDIDO, passwordHash: 'any-hash' });
+    const user = makeUser({
+      status: UserStatus.SUSPENDIDO,
+      passwordHash: 'any-hash',
+    });
     userRepo.findByEmail.mockResolvedValue(user);
 
-    const err = await service.login('user@example.com', 'wrong-password').catch((e) => e);
+    const err = await service
+      .login('user@example.com', 'wrong-password')
+      .catch((e) => e);
 
     expect(err).toBeInstanceOf(ForbiddenException);
     // isLocked should NOT even be consulted because suspension is step 2, before step 3
@@ -235,7 +267,9 @@ describe('AuthService.login()', () => {
     userRepo.findByEmail.mockResolvedValue(user);
     attemptStore.isLocked.mockResolvedValue(true);
 
-    const err = await service.login('user@example.com', 'anything').catch((e) => e);
+    const err = await service
+      .login('user@example.com', 'anything')
+      .catch((e) => e);
 
     expect(err).toBeInstanceOf(HttpException);
     expect((err as HttpException).getStatus()).toBe(HttpStatus.LOCKED);
@@ -247,9 +281,9 @@ describe('AuthService.login()', () => {
     const { service, userRepo } = makeMocks();
     userRepo.findByEmail.mockResolvedValue(null);
 
-    await expect(service.login('ghost@example.com', 'password')).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(
+      service.login('ghost@example.com', 'password'),
+    ).rejects.toThrow(UnauthorizedException);
   });
 });
 
@@ -262,7 +296,9 @@ describe('AuthService.requestPasswordReset()', () => {
     const { service, userRepo, emailNotifier, tokenStore } = makeMocks();
     userRepo.findByEmail.mockResolvedValue(null);
 
-    await expect(service.requestPasswordReset('ghost@example.com')).resolves.toBeUndefined();
+    await expect(
+      service.requestPasswordReset('ghost@example.com'),
+    ).resolves.toBeUndefined();
 
     expect(emailNotifier.sendPasswordReset).not.toHaveBeenCalled();
     expect(tokenStore.save).not.toHaveBeenCalled();
@@ -276,11 +312,15 @@ describe('AuthService.requestPasswordReset()', () => {
     userRepo.findByEmail.mockResolvedValueOnce(user);
     tokenStore.countWithinHour.mockResolvedValue(0);
 
-    await expect(service.requestPasswordReset('user@example.com')).resolves.toBeUndefined();
+    await expect(
+      service.requestPasswordReset('user@example.com'),
+    ).resolves.toBeUndefined();
 
     // unknown email
     userRepo.findByEmail.mockResolvedValueOnce(null);
-    await expect(service.requestPasswordReset('ghost@example.com')).resolves.toBeUndefined();
+    await expect(
+      service.requestPasswordReset('ghost@example.com'),
+    ).resolves.toBeUndefined();
   });
 
   // ESC-06: valid email → token saved + email sent
@@ -293,9 +333,16 @@ describe('AuthService.requestPasswordReset()', () => {
     await service.requestPasswordReset(user.email);
 
     expect(tokenStore.save).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: user.id, tokenHash: expect.any(String), expiresAt: expect.any(Date) }),
+      expect.objectContaining({
+        userId: user.id,
+        tokenHash: expect.any(String),
+        expiresAt: expect.any(Date),
+      }),
     );
-    expect(emailNotifier.sendPasswordReset).toHaveBeenCalledWith(user.email, expect.any(String));
+    expect(emailNotifier.sendPasswordReset).toHaveBeenCalledWith(
+      user.email,
+      expect.any(String),
+    );
   });
 
   // RN-AUTH-05: rate limit silent drop
@@ -305,7 +352,9 @@ describe('AuthService.requestPasswordReset()', () => {
     userRepo.findByEmail.mockResolvedValue(user);
     tokenStore.countWithinHour.mockResolvedValue(3); // already at limit
 
-    await expect(service.requestPasswordReset(user.email)).resolves.toBeUndefined();
+    await expect(
+      service.requestPasswordReset(user.email),
+    ).resolves.toBeUndefined();
     expect(emailNotifier.sendPasswordReset).not.toHaveBeenCalled();
   });
 });
@@ -315,13 +364,19 @@ describe('AuthService.resetPassword()', () => {
   it('ESC-06: valid token → updatePasswordHash called + markUsed called', async () => {
     const { service, tokenStore, userRepo } = makeMocks();
     const rawToken = 'a'.repeat(64); // 32 bytes hex
-    const token = makeToken({ expiresAt: new Date(Date.now() + 10 * 60 * 1000), usedAt: null });
+    const token = makeToken({
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      usedAt: null,
+    });
     tokenStore.findByHash.mockResolvedValue(token);
 
     await service.resetPassword(rawToken, 'newPassword123');
 
     // OCL §6.2 post-conditions
-    expect(userRepo.updatePasswordHash).toHaveBeenCalledWith(token.userId, expect.any(String));
+    expect(userRepo.updatePasswordHash).toHaveBeenCalledWith(
+      token.userId,
+      expect.any(String),
+    );
     expect(tokenStore.markUsed).toHaveBeenCalledWith(token.id);
   });
 
@@ -330,7 +385,9 @@ describe('AuthService.resetPassword()', () => {
     const { service, tokenStore, userRepo } = makeMocks();
     tokenStore.findByHash.mockResolvedValue(null);
 
-    const err = await service.resetPassword('nonexistent-token', 'newPass').catch((e) => e);
+    const err = await service
+      .resetPassword('nonexistent-token', 'newPass')
+      .catch((e) => e);
 
     expect(err).toBeInstanceOf(HttpException);
     expect((err as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST); // 400
@@ -342,10 +399,15 @@ describe('AuthService.resetPassword()', () => {
   // ESC-07: token expired → 410, no DB write
   it('ESC-07: expired token → 410 HttpException, no password update', async () => {
     const { service, tokenStore, userRepo } = makeMocks();
-    const expiredToken = makeToken({ expiresAt: new Date(Date.now() - 1000), usedAt: null });
+    const expiredToken = makeToken({
+      expiresAt: new Date(Date.now() - 1000),
+      usedAt: null,
+    });
     tokenStore.findByHash.mockResolvedValue(expiredToken);
 
-    const err = await service.resetPassword('some-raw-token', 'newPass').catch((e) => e);
+    const err = await service
+      .resetPassword('some-raw-token', 'newPass')
+      .catch((e) => e);
 
     expect(err).toBeInstanceOf(HttpException);
     expect((err as HttpException).getStatus()).toBe(HttpStatus.GONE); // 410
@@ -362,7 +424,9 @@ describe('AuthService.resetPassword()', () => {
     });
     tokenStore.findByHash.mockResolvedValue(usedToken);
 
-    const err = await service.resetPassword('some-raw-token', 'newPass').catch((e) => e);
+    const err = await service
+      .resetPassword('some-raw-token', 'newPass')
+      .catch((e) => e);
 
     expect(err).toBeInstanceOf(HttpException);
     expect((err as HttpException).getStatus()).toBe(HttpStatus.GONE); // 410
@@ -374,12 +438,16 @@ describe('AuthService.resetPassword()', () => {
   it('ESC-06 (OCL §6.2): new password stored as Argon2id hash, never plaintext', async () => {
     const { service, tokenStore, userRepo } = makeMocks();
     const rawToken = 'b'.repeat(64);
-    const token = makeToken({ expiresAt: new Date(Date.now() + 10 * 60 * 1000), usedAt: null });
+    const token = makeToken({
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      usedAt: null,
+    });
     tokenStore.findByHash.mockResolvedValue(token);
 
     await service.resetPassword(rawToken, 'myNewPassword');
 
-    const [, newHash] = (userRepo.updatePasswordHash as jest.Mock).mock.calls[0] as [string, string];
+    const [, newHash] = (userRepo.updatePasswordHash as jest.Mock).mock
+      .calls[0] as [string, string];
     // Argon2id hashes start with $argon2id$
     expect(newHash).toMatch(/^\$argon2id\$/);
     // Raw password not stored

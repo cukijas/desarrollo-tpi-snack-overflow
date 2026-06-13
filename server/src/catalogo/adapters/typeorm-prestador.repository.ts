@@ -2,9 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Prestador } from '../domain/prestador.entity.js';
-import { IPrestadorRepository, BusquedaCriteria, PaginatedResult } from '../ports/prestador-repository.port.js';
+import {
+  IPrestadorRepository,
+  BusquedaCriteria,
+  PaginatedResult,
+} from '../ports/prestador-repository.port.js';
 import { PrestadorResumen } from '../dto/prestador-resumen.dto.js';
-import { PrestadorPerfil, ServicioDto, ResenaDto } from '../dto/prestador-perfil.dto.js';
+import {
+  PrestadorPerfil,
+  ServicioDto,
+  ResenaDto,
+} from '../dto/prestador-perfil.dto.js';
 
 @Injectable()
 export class TypeOrmPrestadorRepository implements IPrestadorRepository {
@@ -13,7 +21,9 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
     private readonly repo: Repository<Prestador>,
   ) {}
 
-  async findByCobertura(criteria: BusquedaCriteria): Promise<PaginatedResult<PrestadorResumen>> {
+  async findByCobertura(
+    criteria: BusquedaCriteria,
+  ): Promise<PaginatedResult<PrestadorResumen>> {
     const page = criteria.page ?? 1;
     const pageSize = criteria.pageSize ?? 20;
     const skip = (page - 1) * pageSize;
@@ -21,12 +31,16 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
     const query = this.repo
       .createQueryBuilder('p')
       .where('p.cuentaActiva = :activa', { activa: true })
-      .andWhere('p.tieneServiciosPublicados = :tieneServicios', { tieneServicios: true })
+      .andWhere('p.tieneServiciosPublicados = :tieneServicios', {
+        tieneServicios: true,
+      })
       .andWhere('p.visible = :visible', { visible: true })
       .andWhere('p.categoria = :categoria', { categoria: criteria.oficio });
 
     if (criteria.calificacionMinima !== undefined) {
-      query.andWhere('p.calificacionPromedio >= :calMin', { calMin: criteria.calificacionMinima });
+      query.andWhere('p.calificacionPromedio >= :calMin', {
+        calMin: criteria.calificacionMinima,
+      });
     }
 
     const [rows, total] = await Promise.all([
@@ -68,7 +82,8 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
       cantidadResenas: p.cantidadResenas,
       disponibilidad: p.disponibilidadResumen?.estado ?? null,
       proximaFechaDisponible: p.disponibilidadResumen?.proximaFecha,
-      franjasDisponiblesProximos7Dias: p.disponibilidadResumen?.franjasDisponiblesProximos7Dias,
+      franjasDisponiblesProximos7Dias:
+        p.disponibilidadResumen?.franjasDisponiblesProximos7Dias,
       centroCobertura: p.getCentroCobertura() ?? undefined,
     };
   }

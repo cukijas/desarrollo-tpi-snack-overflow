@@ -123,7 +123,11 @@ class FakeTokenStore implements ITokenStore {
     this.records.set(record.tokenHash, record);
   }
 
-  async save(data: { userId: string; tokenHash: string; expiresAt: Date }): Promise<void> {
+  async save(data: {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+  }): Promise<void> {
     const record: PasswordResetToken = {
       id: crypto.randomUUID(),
       userId: data.userId,
@@ -192,7 +196,7 @@ function makeUserRecord(overrides: Partial<User> = {}): User {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as User;
+  };
 }
 
 interface TestApp {
@@ -215,7 +219,10 @@ async function buildApp(): Promise<TestApp> {
   const module = await Test.createTestingModule({
     imports: [
       PassportModule,
-      JwtModule.register({ secret: 'test-secret', signOptions: { expiresIn: '2h' } }),
+      JwtModule.register({
+        secret: 'test-secret',
+        signOptions: { expiresIn: '2h' },
+      }),
     ],
     controllers: [AuthController],
     providers: [
@@ -239,7 +246,15 @@ async function buildApp(): Promise<TestApp> {
   );
   await app.init();
 
-  return { app, userRepo, attemptStore, tokenStore, emailNotifier, regulatedTradeRepo, module };
+  return {
+    app,
+    userRepo,
+    attemptStore,
+    tokenStore,
+    emailNotifier,
+    regulatedTradeRepo,
+    module,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -293,7 +308,9 @@ describe('AuthController (API integration)', () => {
       expect(res.status).toBe(HttpStatus.OK);
       const token = res.body.accessToken as string;
       const [, payloadB64] = token.split('.');
-      const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8')) as Record<string, unknown>;
+      const payload = JSON.parse(
+        Buffer.from(payloadB64, 'base64url').toString('utf8'),
+      ) as Record<string, unknown>;
       expect(payload.role).toBe('prestador');
       expect(payload.providerStatus).toBe('pendiente_habilitacion');
     });
@@ -438,7 +455,10 @@ describe('AuthController (API integration)', () => {
       userRepo.seed(user);
 
       const rawToken = crypto.randomBytes(32).toString('hex');
-      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
       tokenStore.seed({
         id: 'tok-1',
         userId: user.id,
@@ -462,7 +482,10 @@ describe('AuthController (API integration)', () => {
 
       const res = await supertest(app.getHttpServer())
         .post('/auth/reset-password')
-        .send({ token: 'nonexistent-token-value', newPassword: 'newPassword123' });
+        .send({
+          token: 'nonexistent-token-value',
+          newPassword: 'newPassword123',
+        });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -473,7 +496,10 @@ describe('AuthController (API integration)', () => {
       userRepo.seed(user);
 
       const rawToken = crypto.randomBytes(32).toString('hex');
-      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
       tokenStore.seed({
         id: 'tok-expired',
         userId: user.id,
@@ -497,7 +523,10 @@ describe('AuthController (API integration)', () => {
       userRepo.seed(user);
 
       const rawToken = crypto.randomBytes(32).toString('hex');
-      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
       tokenStore.seed({
         id: 'tok-used',
         userId: user.id,
@@ -521,7 +550,10 @@ describe('AuthController (API integration)', () => {
       userRepo.seed(user);
 
       const rawToken = crypto.randomBytes(32).toString('hex');
-      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
       tokenStore.seed({
         id: 'tok-expired-2',
         userId: user.id,
@@ -691,7 +723,9 @@ describe('AuthController (API integration)', () => {
         });
 
       expect(res.status).toBe(HttpStatus.CONFLICT);
-      expect(res.body.message).toBe('An account with this email already exists.');
+      expect(res.body.message).toBe(
+        'An account with this email already exists.',
+      );
       // Must not reveal account details (RNF-S.4, RN-REG-02)
       expect(res.body.message).not.toContain('activo');
       expect(res.body.message).not.toContain('suspendido');
@@ -719,7 +753,9 @@ describe('AuthController (API integration)', () => {
         });
 
       expect(res.status).toBe(HttpStatus.CONFLICT);
-      expect(res.body.message).toBe('An account with this email already exists.');
+      expect(res.body.message).toBe(
+        'An account with this email already exists.',
+      );
       expect(res.body.message).not.toContain('suspendido');
       expect(res.body.message).not.toContain('prestador');
     });

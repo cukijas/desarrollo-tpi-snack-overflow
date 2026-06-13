@@ -23,10 +23,19 @@ import { StateMachineModule } from './state-machine/state-machine.module.js';
       username: process.env.DB_USER ?? 'snack_user',
       password: process.env.DB_PASSWORD ?? 'snack_password',
       database: process.env.DB_NAME ?? 'snack_overflow',
-      entities: [User, PasswordResetToken, RegulatedTrade, Prestador, Servicio, Contratacion, StateChangeHistory],
+      entities: [
+        User,
+        PasswordResetToken,
+        RegulatedTrade,
+        Prestador,
+        Servicio,
+        Contratacion,
+        StateChangeHistory,
+      ],
       // synchronize only for development — disable in production
       synchronize: process.env.NODE_ENV !== 'production',
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+      ssl:
+        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     }),
     AuthModule,
     CatalogoModule,

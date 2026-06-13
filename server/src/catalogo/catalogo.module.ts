@@ -15,9 +15,7 @@ import { RankingPorDistanciaStrategy } from './domain/ranking/ranking-por-distan
 import { RankingPorDisponibilidadStrategy } from './domain/ranking/ranking-por-disponibilidad.strategy.js';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Prestador, Servicio]),
-  ],
+  imports: [TypeOrmModule.forFeature([Prestador, Servicio])],
   controllers: [CatalogoController],
   providers: [
     BuscadorService,
@@ -37,9 +35,6 @@ import { RankingPorDisponibilidadStrategy } from './domain/ranking/ranking-por-d
       useClass: OpenStreetMapGeocodingAdapter,
     },
   ],
-  exports: [
-    PRESTADOR_REPOSITORY,
-    SERVICIO_REPOSITORY,
-  ],
+  exports: [PRESTADOR_REPOSITORY, SERVICIO_REPOSITORY],
 })
 export class CatalogoModule {}

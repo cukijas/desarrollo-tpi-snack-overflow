@@ -51,7 +51,9 @@ export class OpenStreetMapGeocodingAdapter implements IGeocodingService {
       });
 
       if (!response.ok) {
-        this.logger.warn(`Nominatim reverse geocoding failed: ${response.status}`);
+        this.logger.warn(
+          `Nominatim reverse geocoding failed: ${response.status}`,
+        );
         return null;
       }
 

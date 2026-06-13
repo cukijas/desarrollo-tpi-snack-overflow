@@ -11,7 +11,11 @@ export class TypeOrmTokenStore implements ITokenStore {
     private readonly repo: Repository<PasswordResetToken>,
   ) {}
 
-  async save(record: { userId: string; tokenHash: string; expiresAt: Date }): Promise<void> {
+  async save(record: {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+  }): Promise<void> {
     const token = this.repo.create({
       userId: record.userId,
       tokenHash: record.tokenHash,

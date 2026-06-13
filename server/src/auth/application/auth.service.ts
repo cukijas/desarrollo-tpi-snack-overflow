@@ -10,10 +10,19 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import * as crypto from 'crypto';
-import { ATTEMPT_STORE, type IAttemptStore } from '../ports/attempt-store.port.js';
-import { EMAIL_NOTIFIER, type IEmailNotifier } from '../ports/email-notifier.port.js';
+import {
+  ATTEMPT_STORE,
+  type IAttemptStore,
+} from '../ports/attempt-store.port.js';
+import {
+  EMAIL_NOTIFIER,
+  type IEmailNotifier,
+} from '../ports/email-notifier.port.js';
 import { type ITokenStore, TOKEN_STORE } from '../ports/token-store.port.js';
-import { type IUserRepository, USER_REPOSITORY } from '../ports/user.repository.port.js';
+import {
+  type IUserRepository,
+  USER_REPOSITORY,
+} from '../ports/user.repository.port.js';
 import { UserRole } from '../domain/user-role.enum.js';
 import { UserStatus } from '../domain/user-status.enum.js';
 import { LoginResponseDto } from '../dto/login-response.dto.js';
@@ -132,7 +141,10 @@ export class AuthService {
     }
 
     const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
     const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
 
     await this.tokenStore.save({ userId: user.id, tokenHash, expiresAt });
@@ -149,7 +161,10 @@ export class AuthService {
    * - 200: password updated and token marked used (ESC-06)
    */
   async resetPassword(rawToken: string, newPassword: string): Promise<void> {
-    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
     const record = await this.tokenStore.findByHash(tokenHash);
 
     if (!record) {

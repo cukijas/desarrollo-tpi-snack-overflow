@@ -32,7 +32,9 @@ export interface IPrestadorRepository {
    * Finds providers by coverage zone and category.
    * Returns paginated results with basic summary info.
    */
-  findByCobertura(criteria: BusquedaCriteria): Promise<PaginatedResult<PrestadorResumen>>;
+  findByCobertura(
+    criteria: BusquedaCriteria,
+  ): Promise<PaginatedResult<PrestadorResumen>>;
 
   /**
    * Finds a provider by ID with full public profile data.

@@ -5,7 +5,10 @@ import { RankingContext } from '../ranking-strategy.interface.js';
 describe('RankingPorDistanciaStrategy', () => {
   const strategy = new RankingPorDistanciaStrategy();
 
-  function makeResumen(centro?: { lat: number; lng: number }): PrestadorResumen {
+  function makeResumen(centro?: {
+    lat: number;
+    lng: number;
+  }): PrestadorResumen {
     return {
       id: 'uuid',
       nombreCompleto: 'Test',
@@ -19,12 +22,15 @@ describe('RankingPorDistanciaStrategy', () => {
 
   it('sorts by closest distance first (Haversine)', async () => {
     const clientLocation = { lat: -27.37, lng: -55.89 };
-    const context: RankingContext = { ubicacionCliente: clientLocation, fechaConsulta: new Date() };
+    const context: RankingContext = {
+      ubicacionCliente: clientLocation,
+      fechaConsulta: new Date(),
+    };
 
     const prestadores = [
-      makeResumen({ lat: -27.50, lng: -56.00 }), // ~15km away from client
-      makeResumen({ lat: -27.37, lng: -55.89 }),  // 0km (same location)
-      makeResumen({ lat: -27.80, lng: -55.80 }),  // ~48km away
+      makeResumen({ lat: -27.5, lng: -56.0 }), // ~15km away from client
+      makeResumen({ lat: -27.37, lng: -55.89 }), // 0km (same location)
+      makeResumen({ lat: -27.8, lng: -55.8 }), // ~48km away
     ];
 
     const result = await strategy.rank(prestadores, context);
@@ -39,7 +45,7 @@ describe('RankingPorDistanciaStrategy', () => {
     };
 
     const prestadores = [
-      makeResumen({ lat: -27.50, lng: -56.00 }),
+      makeResumen({ lat: -27.5, lng: -56.0 }),
       makeResumen(undefined), // no location
     ];
     // Override centroCobertura to undefined for the second one
@@ -51,7 +57,10 @@ describe('RankingPorDistanciaStrategy', () => {
 
   it('returns unchanged array when no client location is provided', async () => {
     const context: RankingContext = { fechaConsulta: new Date() };
-    const prestadores = [makeResumen(), makeResumen({ lat: -27.50, lng: -56.00 })];
+    const prestadores = [
+      makeResumen(),
+      makeResumen({ lat: -27.5, lng: -56.0 }),
+    ];
 
     const result = await strategy.rank(prestadores, context);
     expect(result).toHaveLength(2);

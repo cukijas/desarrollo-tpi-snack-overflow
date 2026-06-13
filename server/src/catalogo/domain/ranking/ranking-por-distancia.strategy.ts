@@ -4,7 +4,11 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { IRankingStrategy, RankingContext, RankingStrategyType } from '../ranking-strategy.interface.js';
+import {
+  IRankingStrategy,
+  RankingContext,
+  RankingStrategyType,
+} from '../ranking-strategy.interface.js';
 import { PrestadorResumen } from '../../dto/prestador-resumen.dto.js';
 import { Coordenadas } from '../cobertura-zona.value.js';
 
@@ -12,7 +16,10 @@ import { Coordenadas } from '../cobertura-zona.value.js';
 export class RankingPorDistanciaStrategy implements IRankingStrategy {
   readonly type: RankingStrategyType = 'distancia';
 
-  async rank(prestadores: PrestadorResumen[], context: RankingContext): Promise<PrestadorResumen[]> {
+  async rank(
+    prestadores: PrestadorResumen[],
+    context: RankingContext,
+  ): Promise<PrestadorResumen[]> {
     if (!context.ubicacionCliente) {
       // No location provided — return as-is (or could throw, but spec says sort by distance when selected)
       return [...prestadores];
@@ -21,8 +28,16 @@ export class RankingPorDistanciaStrategy implements IRankingStrategy {
     const { lat: clientLat, lng: clientLng } = context.ubicacionCliente;
 
     return [...prestadores].sort((a, b) => {
-      const distA = this.calculateDistance(clientLat, clientLng, a.centroCobertura);
-      const distB = this.calculateDistance(clientLat, clientLng, b.centroCobertura);
+      const distA = this.calculateDistance(
+        clientLat,
+        clientLng,
+        a.centroCobertura,
+      );
+      const distB = this.calculateDistance(
+        clientLat,
+        clientLng,
+        b.centroCobertura,
+      );
       return distA - distB;
     });
   }
@@ -30,7 +45,11 @@ export class RankingPorDistanciaStrategy implements IRankingStrategy {
   /**
    * Haversine formula for distance between two coordinates in kilometers.
    */
-  private calculateDistance(lat1: number, lng1: number, target: Coordenadas | undefined): number {
+  private calculateDistance(
+    lat1: number,
+    lng1: number,
+    target: Coordenadas | undefined,
+  ): number {
     if (!target) {
       return Infinity; // Providers without location go to the end
     }
@@ -41,8 +60,10 @@ export class RankingPorDistanciaStrategy implements IRankingStrategy {
 
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(target.lat)) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      Math.cos(this.toRad(lat1)) *
+        Math.cos(this.toRad(target.lat)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;

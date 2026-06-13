@@ -27,7 +27,7 @@ function makeHistory(
     estadoNuevo: ContratacionEstado.SOLICITADA,
     timestamp: new Date(),
     ...overrides,
-  } as StateChangeHistory;
+  };
 }
 
 interface Mocks {
@@ -221,10 +221,7 @@ describe('StateMachineService.transitionTo()', () => {
     historyRepo.findOne.mockResolvedValue(previous);
 
     await expect(
-      service.transitionTo(
-        'contratacion-uuid-1',
-        ContratacionEstado.CANCELADA,
-      ),
+      service.transitionTo('contratacion-uuid-1', ContratacionEstado.CANCELADA),
     ).rejects.toThrow(InvalidTransitionError);
   });
 

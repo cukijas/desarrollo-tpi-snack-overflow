@@ -12,7 +12,10 @@ export interface RankingContext {
   calificacionMinima?: number;
 }
 
-export type RankingStrategyType = 'calificacion' | 'distancia' | 'disponibilidad';
+export type RankingStrategyType =
+  | 'calificacion'
+  | 'distancia'
+  | 'disponibilidad';
 
 export interface IRankingStrategy {
   readonly type: RankingStrategyType;
@@ -23,5 +26,8 @@ export interface IRankingStrategy {
    * @param context Ranking context (client location, query date, etc.)
    * @returns Ranked list (new array, original not mutated)
    */
-  rank(prestadores: PrestadorResumen[], context: RankingContext): Promise<PrestadorResumen[]>;
+  rank(
+    prestadores: PrestadorResumen[],
+    context: RankingContext,
+  ): Promise<PrestadorResumen[]>;
 }

@@ -6,7 +6,9 @@ describe('RankingPorCalificacionStrategy', () => {
   const strategy = new RankingPorCalificacionStrategy();
   const context: RankingContext = { fechaConsulta: new Date() };
 
-  function makeResumen(overrides: Partial<PrestadorResumen> = {}): PrestadorResumen {
+  function makeResumen(
+    overrides: Partial<PrestadorResumen> = {},
+  ): PrestadorResumen {
     return {
       id: 'uuid',
       nombreCompleto: 'Test',

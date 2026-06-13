@@ -6,9 +6,20 @@
  */
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { BuscadorService } from './buscador.service.js';
-import type { IPrestadorRepository, BusquedaCriteria, PaginatedResult } from '../ports/prestador-repository.port.js';
-import type { IGeocodingService, Coordenadas } from '../ports/geocoding.port.js';
-import { IRankingStrategy, RankingContext, RankingStrategyType } from '../domain/ranking-strategy.interface.js';
+import type {
+  IPrestadorRepository,
+  BusquedaCriteria,
+  PaginatedResult,
+} from '../ports/prestador-repository.port.js';
+import type {
+  IGeocodingService,
+  Coordenadas,
+} from '../ports/geocoding.port.js';
+import {
+  IRankingStrategy,
+  RankingContext,
+  RankingStrategyType,
+} from '../domain/ranking-strategy.interface.js';
 import { PrestadorResumen } from '../dto/prestador-resumen.dto.js';
 import { BuscarPrestadoresDto } from '../dto/buscar-prestadores.dto.js';
 
@@ -16,7 +27,9 @@ import { BuscarPrestadoresDto } from '../dto/buscar-prestadores.dto.js';
 // Mocks
 // ---------------------------------------------------------------------------
 
-function makeResumen(overrides: Partial<PrestadorResumen> = {}): PrestadorResumen {
+function makeResumen(
+  overrides: Partial<PrestadorResumen> = {},
+): PrestadorResumen {
   return {
     id: 'prestador-uuid-1',
     nombreCompleto: 'Juan Pérez',
@@ -30,7 +43,9 @@ function makeResumen(overrides: Partial<PrestadorResumen> = {}): PrestadorResume
   };
 }
 
-function makeDto(overrides: Partial<BuscarPrestadoresDto> = {}): BuscarPrestadoresDto {
+function makeDto(
+  overrides: Partial<BuscarPrestadoresDto> = {},
+): BuscarPrestadoresDto {
   return {
     oficio: 'plomero',
     ubicacion: 'Posadas',
@@ -38,18 +53,24 @@ function makeDto(overrides: Partial<BuscarPrestadoresDto> = {}): BuscarPrestador
     page: 1,
     pageSize: 20,
     ...overrides,
-  } as BuscarPrestadoresDto;
+  };
 }
 
-function makePaginated(data: PrestadorResumen[] = []): PaginatedResult<PrestadorResumen> {
+function makePaginated(
+  data: PrestadorResumen[] = [],
+): PaginatedResult<PrestadorResumen> {
   return { data, total: data.length, page: 1, pageSize: 20 };
 }
 
 class MockRankingStrategy implements IRankingStrategy {
   readonly type: RankingStrategyType = 'calificacion';
-  rank = jest.fn().mockImplementation(async (prestadores: PrestadorResumen[], _ctx: RankingContext) => {
-    return [...prestadores];
-  });
+  rank = jest
+    .fn()
+    .mockImplementation(
+      async (prestadores: PrestadorResumen[], _ctx: RankingContext) => {
+        return [...prestadores];
+      },
+    );
 }
 
 function makeMocks() {
@@ -77,12 +98,19 @@ function makeMocks() {
   const service = new BuscadorService(
     prestadorRepo,
     geocodingService,
-    rankingCalificacion as unknown as any,
+    rankingCalificacion,
     rankingDistancia as unknown as any,
-    rankingDisponibilidad as unknown as any,
+    rankingDisponibilidad,
   );
 
-  return { service, prestadorRepo, geocodingService, rankingCalificacion, rankingDistancia, rankingDisponibilidad };
+  return {
+    service,
+    prestadorRepo,
+    geocodingService,
+    rankingCalificacion,
+    rankingDistancia,
+    rankingDisponibilidad,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -112,7 +140,9 @@ describe('BuscadorService.buscar()', () => {
     const { service, prestadorRepo, geocodingService } = makeMocks();
     const coords: Coordenadas = { lat: -27.37, lng: -55.89 };
     geocodingService.geocode.mockResolvedValue(coords);
-    prestadorRepo.findByCobertura.mockResolvedValue(makePaginated([makeResumen()]));
+    prestadorRepo.findByCobertura.mockResolvedValue(
+      makePaginated([makeResumen()]),
+    );
 
     const dto = makeDto();
     const result = await service.buscar(dto);
@@ -134,7 +164,11 @@ describe('BuscadorService.buscar()', () => {
     // Provide data already sorted to verify service pipeline integration.
     prestadorRepo.findByCobertura.mockResolvedValue(
       makePaginated([
-        makeResumen({ id: 'b', calificacionPromedio: 4.5, cantidadResenas: 12 }),
+        makeResumen({
+          id: 'b',
+          calificacionPromedio: 4.5,
+          cantidadResenas: 12,
+        }),
         makeResumen({ id: 'a', calificacionPromedio: 3.0, cantidadResenas: 5 }),
       ]),
     );
@@ -144,7 +178,7 @@ describe('BuscadorService.buscar()', () => {
 
     expect(result.data).toHaveLength(2);
     // Verify the strategy pipeline was invoked
-    expect(result.data.map(r => r.id)).toEqual(['b', 'a']);
+    expect(result.data.map((r) => r.id)).toEqual(['b', 'a']);
   });
 
   // -----------------------------------------------------------------------
@@ -155,8 +189,8 @@ describe('BuscadorService.buscar()', () => {
     geocodingService.geocode.mockResolvedValue({ lat: -27.37, lng: -55.89 });
     prestadorRepo.findByCobertura.mockResolvedValue(
       makePaginated([
-        makeResumen({ id: 'a', centroCobertura: { lat: -27.40, lng: -55.90 } }),
-        makeResumen({ id: 'b', centroCobertura: { lat: -27.50, lng: -56.00 } }),
+        makeResumen({ id: 'a', centroCobertura: { lat: -27.4, lng: -55.9 } }),
+        makeResumen({ id: 'b', centroCobertura: { lat: -27.5, lng: -56.0 } }),
       ]),
     );
 
@@ -188,7 +222,7 @@ describe('BuscadorService.buscar()', () => {
 
     expect(result.data).toHaveLength(2);
     // Verify the strategy pipeline was invoked
-    expect(result.data.map(r => r.id)).toEqual(['b', 'a']);
+    expect(result.data.map((r) => r.id)).toEqual(['b', 'a']);
   });
 
   // -----------------------------------------------------------------------
@@ -212,7 +246,9 @@ describe('BuscadorService.buscar()', () => {
   it('ESC-08: search with calificacionMin filter → passes filter to repository', async () => {
     const { service, prestadorRepo, geocodingService } = makeMocks();
     geocodingService.geocode.mockResolvedValue({ lat: -27.37, lng: -55.89 });
-    prestadorRepo.findByCobertura.mockResolvedValue(makePaginated([makeResumen()]));
+    prestadorRepo.findByCobertura.mockResolvedValue(
+      makePaginated([makeResumen()]),
+    );
 
     const dto = makeDto({ calificacionMin: 4, orden: 'distancia' });
     const result = await service.buscar(dto);
@@ -244,7 +280,9 @@ describe('BuscadorService.buscar()', () => {
   it('default sort is calificacion when orden is not specified', async () => {
     const { service, prestadorRepo, geocodingService } = makeMocks();
     geocodingService.geocode.mockResolvedValue({ lat: -27.37, lng: -55.89 });
-    prestadorRepo.findByCobertura.mockResolvedValue(makePaginated([makeResumen()]));
+    prestadorRepo.findByCobertura.mockResolvedValue(
+      makePaginated([makeResumen()]),
+    );
 
     const dto = makeDto({ orden: undefined });
     const result = await service.buscar(dto);
@@ -283,11 +321,15 @@ describe('BuscadorService.obtenerPerfil()', () => {
     const { service, prestadorRepo } = makeMocks();
     prestadorRepo.findByIdWithProfile.mockResolvedValue(null);
 
-    await expect(service.obtenerPerfil('non-existent-id')).rejects.toThrow(NotFoundException);
+    await expect(service.obtenerPerfil('non-existent-id')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('throws BadRequestException when prestadorId is empty', async () => {
     const { service } = makeMocks();
-    await expect(service.obtenerPerfil('')).rejects.toThrow(BadRequestException);
+    await expect(service.obtenerPerfil('')).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });

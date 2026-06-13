@@ -24,8 +24,14 @@ import {
 class StubAvailabilityService implements IAvailabilityService {
   private readonly logger = new Logger(StubAvailabilityService.name);
 
-  async isAvailable(_prestadorId: string, _fecha: string, _franja: string): Promise<boolean> {
-    this.logger.warn('STUB: isAvailable always returns true — UC06 not yet implemented');
+  async isAvailable(
+    _prestadorId: string,
+    _fecha: string,
+    _franja: string,
+  ): Promise<boolean> {
+    this.logger.warn(
+      'STUB: isAvailable always returns true — UC06 not yet implemented',
+    );
     return true;
   }
 
@@ -38,16 +44,17 @@ class StubAvailabilityService implements IAvailabilityService {
     this.logger.warn('STUB: reserve is a no-op — UC06 not yet implemented');
   }
 
-  async release(_prestadorId: string, _fecha: string, _franja: string): Promise<void> {
+  async release(
+    _prestadorId: string,
+    _fecha: string,
+    _franja: string,
+  ): Promise<void> {
     this.logger.warn('STUB: release is a no-op — UC06 not yet implemented');
   }
 }
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Contratacion, User]),
-    StateMachineModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Contratacion, User]), StateMachineModule],
   controllers: [ContratacionController],
   providers: [
     ContratacionService,

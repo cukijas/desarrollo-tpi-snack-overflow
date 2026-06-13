@@ -30,14 +30,20 @@ export class AuthController {
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<GenericMessageDto> {
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+  ): Promise<GenericMessageDto> {
     await this.authService.requestPasswordReset(dto.email);
-    return { message: 'If that email is registered, a recovery link has been sent.' };
+    return {
+      message: 'If that email is registered, a recovery link has been sent.',
+    };
   }
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() dto: ResetPasswordDto): Promise<GenericMessageDto> {
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+  ): Promise<GenericMessageDto> {
     await this.authService.resetPassword(dto.token, dto.newPassword);
     return { message: 'Password updated successfully.' };
   }

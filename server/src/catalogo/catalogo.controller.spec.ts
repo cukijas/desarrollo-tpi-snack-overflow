@@ -11,9 +11,21 @@ import { INestApplication } from '@nestjs/common';
 
 import { CatalogoController } from './catalogo.controller.js';
 import { BuscadorService } from './application/buscador.service.js';
-import { PRESTADOR_REPOSITORY, IPrestadorRepository, PaginatedResult } from './ports/prestador-repository.port.js';
-import { GEOCODING_SERVICE, IGeocodingService, Coordenadas } from './ports/geocoding.port.js';
-import { IRankingStrategy, RankingContext, RankingStrategyType } from './domain/ranking-strategy.interface.js';
+import {
+  PRESTADOR_REPOSITORY,
+  IPrestadorRepository,
+  PaginatedResult,
+} from './ports/prestador-repository.port.js';
+import {
+  GEOCODING_SERVICE,
+  IGeocodingService,
+  Coordenadas,
+} from './ports/geocoding.port.js';
+import {
+  IRankingStrategy,
+  RankingContext,
+  RankingStrategyType,
+} from './domain/ranking-strategy.interface.js';
 import { PrestadorResumen } from './dto/prestador-resumen.dto.js';
 import { PrestadorPerfil } from './dto/prestador-perfil.dto.js';
 import { RankingPorCalificacionStrategy } from './domain/ranking/ranking-por-calificacion.strategy.js';
@@ -94,7 +106,13 @@ describe('CatalogoController (API)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
     await app.init();
   });
 
@@ -214,7 +232,11 @@ describe('CatalogoController (API)', () => {
   it('accepts orden=disponibilidad query param', async () => {
     await supertest(app.getHttpServer())
       .get('/catalogo/prestadores')
-      .query({ oficio: 'plomero', ubicacion: 'Posadas', orden: 'disponibilidad' })
+      .query({
+        oficio: 'plomero',
+        ubicacion: 'Posadas',
+        orden: 'disponibilidad',
+      })
       .expect(HttpStatus.OK);
   });
 

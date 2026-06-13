@@ -35,10 +35,20 @@ export class Servicio {
   @Column('text', { name: 'descripcion' })
   descripcion!: string;
 
-  @Column('decimal', { precision: 10, scale: 2, name: 'rango_precio_min', nullable: true })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    name: 'rango_precio_min',
+    nullable: true,
+  })
   rangoPrecioMin!: number | null;
 
-  @Column('decimal', { precision: 10, scale: 2, name: 'rango_precio_max', nullable: true })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    name: 'rango_precio_max',
+    nullable: true,
+  })
   rangoPrecioMax!: number | null;
 
   @Column('boolean', { name: 'visible', default: true })

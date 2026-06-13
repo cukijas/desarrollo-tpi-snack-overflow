@@ -19,11 +19,7 @@ describe('RankingPorDisponibilidadStrategy', () => {
   }
 
   it('sorts by available slots DESC', async () => {
-    const prestadores = [
-      makeResumen(3),
-      makeResumen(10),
-      makeResumen(1),
-    ];
+    const prestadores = [makeResumen(3), makeResumen(10), makeResumen(1)];
 
     const result = await strategy.rank(prestadores, context);
     expect(result[0].franjasDisponiblesProximos7Dias).toBe(10);
@@ -48,6 +44,8 @@ describe('RankingPorDisponibilidadStrategy', () => {
     const original = [...prestadores];
 
     await strategy.rank(prestadores, context);
-    expect(prestadores[0].franjasDisponiblesProximos7Dias).toBe(original[0].franjasDisponiblesProximos7Dias);
+    expect(prestadores[0].franjasDisponiblesProximos7Dias).toBe(
+      original[0].franjasDisponiblesProximos7Dias,
+    );
   });
 });

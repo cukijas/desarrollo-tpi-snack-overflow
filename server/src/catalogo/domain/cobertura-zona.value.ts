@@ -27,7 +27,11 @@ export class CoberturaZona {
   private readonly _bbox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
 
   constructor(geometry: GeoJSONGeometry, localidad?: string) {
-    if (!geometry || !geometry.coordinates || geometry.coordinates.length === 0) {
+    if (
+      !geometry ||
+      !geometry.coordinates ||
+      geometry.coordinates.length === 0
+    ) {
       throw new Error('Invalid geometry: coordinates cannot be empty');
     }
     this._geometry = geometry;
@@ -94,7 +98,11 @@ export class CoberturaZona {
    * Creates a CoberturaZona from a simple circular area (lat, lng, radiusKm).
    * Useful for fallback when only localidad is known.
    */
-  static fromCircle(center: Coordenadas, radiusKm: number, localidad?: string): CoberturaZona {
+  static fromCircle(
+    center: Coordenadas,
+    radiusKm: number,
+    localidad?: string,
+  ): CoberturaZona {
     const points = 32;
     const coordinates: number[][] = [];
     const earthRadiusKm = 6371;
@@ -103,9 +111,13 @@ export class CoberturaZona {
       const angle = (i * 2 * Math.PI) / points;
       const latOffset = (radiusKm / earthRadiusKm) * (180 / Math.PI);
       const lngOffset =
-        (radiusKm / earthRadiusKm) * (180 / Math.PI) / Math.cos((center.lat * Math.PI) / 180);
+        ((radiusKm / earthRadiusKm) * (180 / Math.PI)) /
+        Math.cos((center.lat * Math.PI) / 180);
 
-      coordinates.push([center.lng + lngOffset * Math.cos(angle), center.lat + latOffset * Math.sin(angle)]);
+      coordinates.push([
+        center.lng + lngOffset * Math.cos(angle),
+        center.lat + latOffset * Math.sin(angle),
+      ]);
     }
 
     const geometry: GeoJSONPolygon = {
@@ -116,7 +128,9 @@ export class CoberturaZona {
     return new CoberturaZona(geometry, localidad);
   }
 
-  private calculateBoundingBox(geometry: GeoJSONGeometry): [number, number, number, number] {
+  private calculateBoundingBox(
+    geometry: GeoJSONGeometry,
+  ): [number, number, number, number] {
     let minLng = Infinity;
     let minLat = Infinity;
     let maxLng = -Infinity;
@@ -152,7 +166,9 @@ export class CoberturaZona {
       const [xi, yi] = ring[i];
       const [xj, yj] = ring[j];
 
-      const intersect = yi > point.lat !== yj > point.lat && point.lng < ((xj - xi) * (point.lat - yi)) / (yj - yi) + xi;
+      const intersect =
+        yi > point.lat !== yj > point.lat &&
+        point.lng < ((xj - xi) * (point.lat - yi)) / (yj - yi) + xi;
       if (intersect) inside = !inside;
     }
     return inside;

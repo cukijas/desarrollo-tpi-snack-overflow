@@ -3,10 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { STATE_MACHINE } from '../contratacion/ports/state-machine.port.js';
 import { StateMachineService } from './application/state-machine.service.js';
 import { StateChangeHistory } from './domain/state-change-history.entity.js';
-import {
-  NOTIFIER,
-  type INotifier,
-} from './ports/notifier.port.js';
+import { NOTIFIER, type INotifier } from './ports/notifier.port.js';
 import { ContratacionEstado } from '../contratacion/domain/contratacion-estado.enum.js';
 
 /**

@@ -28,7 +28,12 @@ export class PasswordResetToken {
   expiresAt: Date;
 
   // NULL = not yet consumed; NOT NULL = already used (ESC-07)
-  @Column({ type: 'timestamptz', name: 'used_at', nullable: true, default: null })
+  @Column({
+    type: 'timestamptz',
+    name: 'used_at',
+    nullable: true,
+    default: null,
+  })
   usedAt: Date | null;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })

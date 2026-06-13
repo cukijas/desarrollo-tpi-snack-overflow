@@ -42,7 +42,9 @@ function makePrestador(overrides: Partial<User> = {}): User {
   } as User;
 }
 
-function makeCreateDto(overrides: Partial<CreateContratacionDto> = {}): CreateContratacionDto {
+function makeCreateDto(
+  overrides: Partial<CreateContratacionDto> = {},
+): CreateContratacionDto {
   const dto = new CreateContratacionDto();
   dto.ubicacion = 'Av. Siempre Viva 123, Springfield';
   dto.prestadorId = 'prestador-uuid-1';
@@ -67,7 +69,7 @@ function makeContratacion(overrides: Partial<Contratacion> = {}): Contratacion {
     precioEstimado: null,
     createdAt: new Date('2026-06-13'),
     ...overrides,
-  } as Contratacion;
+  };
 }
 
 function makeMocks() {
@@ -260,7 +262,9 @@ describe('ContratacionService.create()', () => {
   it('ESC-06: fecha in the past → UnprocessableEntityException 422', async () => {
     const { service, userRepo } = makeMocks();
     userRepo.findById.mockResolvedValue(makePrestador());
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000)
+      .toISOString()
+      .slice(0, 10);
     const dto = makeCreateDto({ fecha: yesterday });
 
     await expect(
@@ -295,8 +299,13 @@ describe('ContratacionService.create()', () => {
   // ESC-07: Falla en reserva de franja (rollback)
   // -----------------------------------------------------------------------
   it('ESC-07: availabilityService.reserve fails → rollback + release called', async () => {
-    const { service, userRepo, mockQueryRunner, availabilityService, stateMachine } =
-      makeMocks();
+    const {
+      service,
+      userRepo,
+      mockQueryRunner,
+      availabilityService,
+      stateMachine,
+    } = makeMocks();
     const dto = makeCreateDto();
     userRepo.findById.mockResolvedValue(makePrestador());
     availabilityService.isAvailable.mockResolvedValue(true);
@@ -307,7 +316,9 @@ describe('ContratacionService.create()', () => {
         createdAt: new Date('2026-06-13'),
       }),
     );
-    availabilityService.reserve.mockRejectedValue(new Error('Reservation service timeout'));
+    availabilityService.reserve.mockRejectedValue(
+      new Error('Reservation service timeout'),
+    );
 
     await expect(
       service.create(dto, 'cliente-uuid', UserRole.CLIENTE),
@@ -329,8 +340,13 @@ describe('ContratacionService.create()', () => {
   // ESC-07: State machine fails → rollback + release slot
   // -----------------------------------------------------------------------
   it('ESC-07: stateMachine.transitionTo fails → rollback + release slot', async () => {
-    const { service, userRepo, mockQueryRunner, availabilityService, stateMachine } =
-      makeMocks();
+    const {
+      service,
+      userRepo,
+      mockQueryRunner,
+      availabilityService,
+      stateMachine,
+    } = makeMocks();
     const dto = makeCreateDto();
     userRepo.findById.mockResolvedValue(makePrestador());
     availabilityService.isAvailable.mockResolvedValue(true);
@@ -342,7 +358,9 @@ describe('ContratacionService.create()', () => {
       }),
     );
     availabilityService.reserve.mockResolvedValue(undefined);
-    stateMachine.transitionTo.mockRejectedValue(new Error('State machine unavailable'));
+    stateMachine.transitionTo.mockRejectedValue(
+      new Error('State machine unavailable'),
+    );
 
     await expect(
       service.create(dto, 'cliente-uuid', UserRole.CLIENTE),
@@ -399,7 +417,9 @@ describe('ContratacionService.sendProposal()', () => {
     expect(result.precioEstimado).toBe(150.0);
     expect(result.estado).toBe(ContratacionEstado.PRESUPUESTADA);
 
-    expect(contratacionRepo.findById).toHaveBeenCalledWith('contratacion-uuid-1');
+    expect(contratacionRepo.findById).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+    );
     expect(contratacionRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({
         fechaPropuesta: '2026-06-20',
@@ -463,7 +483,9 @@ describe('ContratacionService.sendProposal()', () => {
     const { service, contratacionRepo } = makeMocks();
     const contratacion = makeContratacion();
     contratacionRepo.findById.mockResolvedValue(contratacion);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000)
+      .toISOString()
+      .slice(0, 10);
 
     await expect(
       service.sendProposal(
@@ -541,7 +563,9 @@ describe('ContratacionService.reject()', () => {
     expect(result.id).toBe('contratacion-uuid-1');
     expect(result.estado).toBe(ContratacionEstado.CANCELADA);
 
-    expect(contratacionRepo.findById).toHaveBeenCalledWith('contratacion-uuid-1');
+    expect(contratacionRepo.findById).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+    );
     expect(contratacionRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ estado: ContratacionEstado.CANCELADA }),
     );
@@ -568,7 +592,11 @@ describe('ContratacionService.reject()', () => {
     contratacionRepo.findById.mockResolvedValue(contratacion);
 
     await expect(
-      service.reject('contratacion-uuid-1', 'prestador-uuid-1', UserRole.PRESTADOR),
+      service.reject(
+        'contratacion-uuid-1',
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
     ).rejects.toThrow(ConflictException);
   });
 
@@ -578,7 +606,11 @@ describe('ContratacionService.reject()', () => {
     contratacionRepo.findById.mockResolvedValue(contratacion);
 
     await expect(
-      service.reject('contratacion-uuid-1', 'prestador-uuid-1', UserRole.PRESTADOR),
+      service.reject(
+        'contratacion-uuid-1',
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
     ).rejects.toThrow(NotFoundException);
   });
 

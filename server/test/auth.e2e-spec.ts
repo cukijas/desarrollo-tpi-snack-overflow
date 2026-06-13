@@ -45,7 +45,14 @@ describe('Auth flow (e2e: register → login)', () => {
   it('registers a cliente → 201 with status=activo, providerStatus=null (ESC-01)', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password, name: 'Ada', lastName: 'Lovelace', phone: '+5493764000000', role: 'cliente' })
+      .send({
+        email,
+        password,
+        name: 'Ada',
+        lastName: 'Lovelace',
+        phone: '+5493764000000',
+        role: 'cliente',
+      })
       .expect(201);
 
     expect(res.body.status).toBe('activo');
@@ -55,7 +62,14 @@ describe('Auth flow (e2e: register → login)', () => {
   it('rejects a duplicate email → 409 (ESC-06)', async () => {
     await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password, name: 'Ada', lastName: 'Lovelace', phone: '+5493764000000', role: 'cliente' })
+      .send({
+        email,
+        password,
+        name: 'Ada',
+        lastName: 'Lovelace',
+        phone: '+5493764000000',
+        role: 'cliente',
+      })
       .expect(409);
   });
 

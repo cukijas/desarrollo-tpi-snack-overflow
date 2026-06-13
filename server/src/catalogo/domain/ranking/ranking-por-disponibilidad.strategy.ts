@@ -5,14 +5,21 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { IRankingStrategy, RankingContext, RankingStrategyType } from '../ranking-strategy.interface.js';
+import {
+  IRankingStrategy,
+  RankingContext,
+  RankingStrategyType,
+} from '../ranking-strategy.interface.js';
 import { PrestadorResumen } from '../../dto/prestador-resumen.dto.js';
 
 @Injectable()
 export class RankingPorDisponibilidadStrategy implements IRankingStrategy {
   readonly type: RankingStrategyType = 'disponibilidad';
 
-  async rank(prestadores: PrestadorResumen[], context: RankingContext): Promise<PrestadorResumen[]> {
+  async rank(
+    prestadores: PrestadorResumen[],
+    context: RankingContext,
+  ): Promise<PrestadorResumen[]> {
     // Sort by available slots in next 7 days DESC
     // Providers with more availability come first
     return [...prestadores].sort((a, b) => {

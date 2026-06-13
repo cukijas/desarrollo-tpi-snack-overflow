@@ -13,7 +13,6 @@ import {
 import {
   GEOCODING_SERVICE,
   type IGeocodingService,
-  type Coordenadas,
 } from '../ports/geocoding.port.js';
 import {
   IRankingStrategy,

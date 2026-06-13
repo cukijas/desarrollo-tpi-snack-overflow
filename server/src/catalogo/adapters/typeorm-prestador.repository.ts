@@ -8,11 +8,7 @@ import {
   PaginatedResult,
 } from '../ports/prestador-repository.port.js';
 import { PrestadorResumen } from '../dto/prestador-resumen.dto.js';
-import {
-  PrestadorPerfil,
-  ServicioDto,
-  ResenaDto,
-} from '../dto/prestador-perfil.dto.js';
+import { PrestadorPerfil } from '../dto/prestador-perfil.dto.js';
 
 @Injectable()
 export class TypeOrmPrestadorRepository implements IPrestadorRepository {
@@ -43,7 +39,7 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
       });
     }
 
-    const [rows, total] = await Promise.all([
+    const [rows, _total] = await Promise.all([
       query
         .skip(skip)
         .take(pageSize)

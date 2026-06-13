@@ -306,7 +306,12 @@ describe('AuthService.requestPasswordReset()', () => {
 
   // ESC-08: response shape is the same (void) regardless — prevents enumeration
   it('ESC-08: known email vs unknown email — same void return (no throw)', async () => {
-    const { service, userRepo, tokenStore, emailNotifier } = makeMocks();
+    const {
+      service,
+      userRepo,
+      tokenStore,
+      emailNotifier: _emailNotifier,
+    } = makeMocks();
     // known email
     const user = makeUser();
     userRepo.findByEmail.mockResolvedValueOnce(user);

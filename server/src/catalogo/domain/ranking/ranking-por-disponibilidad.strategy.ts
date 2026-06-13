@@ -16,16 +16,18 @@ import { PrestadorResumen } from '../../dto/prestador-resumen.dto.js';
 export class RankingPorDisponibilidadStrategy implements IRankingStrategy {
   readonly type: RankingStrategyType = 'disponibilidad';
 
-  async rank(
+  rank(
     prestadores: PrestadorResumen[],
-    context: RankingContext,
+    _context: RankingContext,
   ): Promise<PrestadorResumen[]> {
     // Sort by available slots in next 7 days DESC
     // Providers with more availability come first
-    return [...prestadores].sort((a, b) => {
-      const slotsA = a.franjasDisponiblesProximos7Dias ?? 0;
-      const slotsB = b.franjasDisponiblesProximos7Dias ?? 0;
-      return slotsB - slotsA;
-    });
+    return Promise.resolve(
+      [...prestadores].sort((a, b) => {
+        const slotsA = a.franjasDisponiblesProximos7Dias ?? 0;
+        const slotsB = b.franjasDisponiblesProximos7Dias ?? 0;
+        return slotsB - slotsA;
+      }),
+    );
   }
 }

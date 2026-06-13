@@ -26,7 +26,7 @@ export class OpenStreetMapGeocodingAdapter implements IGeocodingService {
         return null;
       }
 
-      const results: NominatimResult[] = await response.json();
+      const results = (await response.json()) as NominatimResult[];
       if (!results || results.length === 0) {
         return null;
       }
@@ -57,7 +57,7 @@ export class OpenStreetMapGeocodingAdapter implements IGeocodingService {
         return null;
       }
 
-      const result: { display_name?: string } = await response.json();
+      const result = (await response.json()) as { display_name?: string };
       return result.display_name ?? null;
     } catch (error) {
       this.logger.error('Reverse geocoding request failed', error);

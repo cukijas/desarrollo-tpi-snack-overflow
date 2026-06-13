@@ -12,10 +12,7 @@ import {
   AVAILABILITY_SERVICE,
   type IAvailabilityService,
 } from './ports/availability-service.port.js';
-import {
-  CONTRATACION_REPOSITORY,
-  type IContratacionRepository,
-} from './ports/contratacion-repository.port.js';
+import { CONTRATACION_REPOSITORY } from './ports/contratacion-repository.port.js';
 
 /**
  * Stub adapter for AvailabilityService — no-op until UC06 (agenda) is implemented.
@@ -24,7 +21,7 @@ import {
 class StubAvailabilityService implements IAvailabilityService {
   private readonly logger = new Logger(StubAvailabilityService.name);
 
-  async isAvailable(
+  isAvailable(
     _prestadorId: string,
     _fecha: string,
     _franja: string,
@@ -32,24 +29,26 @@ class StubAvailabilityService implements IAvailabilityService {
     this.logger.warn(
       'STUB: isAvailable always returns true — UC06 not yet implemented',
     );
-    return true;
+    return Promise.resolve(true);
   }
 
-  async reserve(
+  reserve(
     _prestadorId: string,
     _fecha: string,
     _franja: string,
     _contratacionId: string,
   ): Promise<void> {
     this.logger.warn('STUB: reserve is a no-op — UC06 not yet implemented');
+    return Promise.resolve();
   }
 
-  async release(
+  release(
     _prestadorId: string,
     _fecha: string,
     _franja: string,
   ): Promise<void> {
     this.logger.warn('STUB: release is a no-op — UC06 not yet implemented');
+    return Promise.resolve();
   }
 }
 

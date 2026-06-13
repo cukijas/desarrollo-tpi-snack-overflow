@@ -5,7 +5,6 @@
  * All ports are mocked in-memory; no DB or Redis required.
  */
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import * as argon2 from 'argon2';
 import { RegistrationService } from './registration.service.js';
 import { ProviderStatus } from '../domain/provider-status.enum.js';
 import { UserRole } from '../domain/user-role.enum.js';
@@ -13,10 +12,7 @@ import { UserStatus } from '../domain/user-status.enum.js';
 import { RegisterDto } from '../dto/register.dto.js';
 import type { User } from '../domain/user.entity.js';
 import type { RegulatedTrade } from '../domain/regulated-trade.entity.js';
-import type {
-  IUserRepository,
-  CreateUserData,
-} from '../ports/user.repository.port.js';
+import type { IUserRepository } from '../ports/user.repository.port.js';
 import type { IRegulatedTradeRepository } from '../ports/regulated-trade.repository.port.js';
 
 // ---------------------------------------------------------------------------

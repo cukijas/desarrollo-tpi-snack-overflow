@@ -8,7 +8,6 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { BuscadorService } from './buscador.service.js';
 import type {
   IPrestadorRepository,
-  BusquedaCriteria,
   PaginatedResult,
 } from '../ports/prestador-repository.port.js';
 import type {
@@ -83,8 +82,6 @@ function makeMocks() {
     geocode: jest.fn(),
     reverseGeocode: jest.fn(),
   };
-
-  const mockRanking = new MockRankingStrategy();
 
   // We need to create the service with real ranking strategies
   // But inject mocked repository + geocoding

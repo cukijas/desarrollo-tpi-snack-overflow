@@ -16,30 +16,32 @@ import { Coordenadas } from '../cobertura-zona.value.js';
 export class RankingPorDistanciaStrategy implements IRankingStrategy {
   readonly type: RankingStrategyType = 'distancia';
 
-  async rank(
+  rank(
     prestadores: PrestadorResumen[],
     context: RankingContext,
   ): Promise<PrestadorResumen[]> {
     if (!context.ubicacionCliente) {
       // No location provided — return as-is (or could throw, but spec says sort by distance when selected)
-      return [...prestadores];
+      return Promise.resolve([...prestadores]);
     }
 
     const { lat: clientLat, lng: clientLng } = context.ubicacionCliente;
 
-    return [...prestadores].sort((a, b) => {
-      const distA = this.calculateDistance(
-        clientLat,
-        clientLng,
-        a.centroCobertura,
-      );
-      const distB = this.calculateDistance(
-        clientLat,
-        clientLng,
-        b.centroCobertura,
-      );
-      return distA - distB;
-    });
+    return Promise.resolve(
+      [...prestadores].sort((a, b) => {
+        const distA = this.calculateDistance(
+          clientLat,
+          clientLng,
+          a.centroCobertura,
+        );
+        const distB = this.calculateDistance(
+          clientLat,
+          clientLng,
+          b.centroCobertura,
+        );
+        return distA - distB;
+      }),
+    );
   }
 
   /**

@@ -13,7 +13,7 @@ import { ContratacionEstado } from '../contratacion/domain/contratacion-estado.e
 class StubNotifier implements INotifier {
   private readonly logger = new Logger(StubNotifier.name);
 
-  async notify(_params: {
+  notify(_params: {
     contratacionId: string;
     estadoAnterior: ContratacionEstado;
     estadoNuevo: ContratacionEstado;
@@ -22,6 +22,7 @@ class StubNotifier implements INotifier {
     this.logger.warn(
       `STUB: notify is a no-op — UC19 not yet implemented. Would notify: ${_params.contratacionId} transitioned from ${_params.estadoAnterior} to ${_params.estadoNuevo}`,
     );
+    return Promise.resolve();
   }
 }
 

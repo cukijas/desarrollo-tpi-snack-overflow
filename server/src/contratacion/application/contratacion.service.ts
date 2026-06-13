@@ -72,7 +72,7 @@ export class ContratacionService {
     clienteRole: string,
   ): Promise<ContratacionResponseDto> {
     // ── Authorization gate (RNF-S.1 / RN-CON-01) ──
-    if (clienteRole !== UserRole.CLIENTE) {
+    if ((clienteRole as UserRole) !== UserRole.CLIENTE) {
       throw new ForbiddenException(
         'Only authenticated clients can create contrataciones.',
       );
@@ -216,7 +216,7 @@ export class ContratacionService {
     role: string,
   ): Promise<ContratacionResponseDto> {
     // 1. Only PRESTADOR can send proposals (RN-CON-01)
-    if (role !== UserRole.PRESTADOR) {
+    if ((role as UserRole) !== UserRole.PRESTADOR) {
       throw new ForbiddenException('Only prestadores can send proposals.');
     }
 
@@ -298,7 +298,7 @@ export class ContratacionService {
     role: string,
   ): Promise<ContratacionResponseDto> {
     // 1. Only PRESTADOR can reject requests (RN-CON-01)
-    if (role !== UserRole.PRESTADOR) {
+    if ((role as UserRole) !== UserRole.PRESTADOR) {
       throw new ForbiddenException('Only prestadores can reject requests.');
     }
 

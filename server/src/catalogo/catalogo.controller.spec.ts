@@ -21,11 +21,6 @@ import {
   IGeocodingService,
   Coordenadas,
 } from './ports/geocoding.port.js';
-import {
-  IRankingStrategy,
-  RankingContext,
-  RankingStrategyType,
-} from './domain/ranking-strategy.interface.js';
 import { PrestadorResumen } from './dto/prestador-resumen.dto.js';
 import { PrestadorPerfil } from './dto/prestador-perfil.dto.js';
 import { RankingPorCalificacionStrategy } from './domain/ranking/ranking-por-calificacion.strategy.js';

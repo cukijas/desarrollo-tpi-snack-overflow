@@ -7,6 +7,8 @@ import { PasswordResetToken } from './auth/domain/password-reset-token.entity.js
 import { User } from './auth/domain/user.entity.js';
 import { Contratacion } from './contratacion/domain/contratacion.entity.js';
 import { ContratacionModule } from './contratacion/contratacion.module.js';
+import { StateChangeHistory } from './state-machine/domain/state-change-history.entity.js';
+import { StateMachineModule } from './state-machine/state-machine.module.js';
 
 @Module({
   imports: [
@@ -17,13 +19,14 @@ import { ContratacionModule } from './contratacion/contratacion.module.js';
       username: process.env.DB_USER ?? 'snack_user',
       password: process.env.DB_PASSWORD ?? 'snack_password',
       database: process.env.DB_NAME ?? 'snack_overflow',
-      entities: [User, PasswordResetToken, Contratacion],
+      entities: [User, PasswordResetToken, Contratacion, StateChangeHistory],
       // synchronize only for development — disable in production
       synchronize: process.env.NODE_ENV !== 'production',
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     }),
     AuthModule,
     ContratacionModule,
+    StateMachineModule,
   ],
   controllers: [AppController],
   providers: [AppService],

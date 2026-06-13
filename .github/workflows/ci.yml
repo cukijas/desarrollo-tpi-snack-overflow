@@ -22,9 +22,9 @@ jobs:
       run:
         working-directory: server
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: npm
@@ -43,6 +43,11 @@ jobs:
 
       - name: Unit tests + coverage
         run: npm run test:cov
+
+      - name: Production build
+        # Gates prod-buildability: ts-jest transpiles leniently and misses errors
+        # that `nest build` (tsc with isolatedModules) catches — e.g. TS1272.
+        run: npm run build
 
       - name: Upload coverage report
         if: always()
@@ -95,9 +100,9 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: npm
@@ -118,9 +123,9 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: npm

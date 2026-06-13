@@ -93,3 +93,23 @@ Without this, `npm run build` (CI) is **RED**.
 | UC08 | 🟡 med | wait for UC07 + merge contratación |
 | UC09 | 🟡 med | wait for UC08 + register state-machine module |
 | UC04 | 🔴 high | drop stale UC01 + fix TS1272 |
+
+---
+
+## Wave 5 — Post-integration cleanup (only AFTER all 4 branches are merged)
+
+Deliberately deferred until UC07/UC08/UC09/UC04 are all in `main`: doing it earlier reformats
+shared files and adds conflict churn to the still-open branches.
+
+1. **Prettier sweep.** `cd server && npx eslint src test --fix` (clears the ~64 `prettier/prettier`
+   formatting errors), then fix the remaining `@typescript-eslint` errors by hand — at last
+   measurement ~305 problems total, only ~70 auto-fixable. The manual residue is mostly
+   `no-unsafe-*` (untyped values), `unbound-method` (in specs), `require-await`, `no-unused-vars`.
+2. **Make lint blocking.** Once `npx eslint src test` exits 0, flip `continue-on-error: true` →
+   `false` on the server **Lint** step in `.github/workflows/ci.yml`, so the static-analysis gate
+   is enforced on every PR (closes the one deviation from the doc's §3764 CI gate).
+3. Verify `npm test` + `npm run build` still green, commit (sweep separate from the CI flip), push.
+
+> Document the `import type` / TS1272 rule in the root `AGENTS.md` gotchas section while here — it
+> was discovered after AGENTS.md was written and bit UC04. Adding it prevents the next branch from
+> repeating it.

@@ -7,14 +7,30 @@ const nextConfig: NextConfig = {
   // Same-origin proxy for the NestJS backend.
   // The backend has NO CORS enabled and exposes routes without a global prefix
   // (e.g. POST /auth/register on :3000). Calling it cross-origin from the browser
-  // would be blocked, so the client always calls relative `/api/:path*` and Next
-  // rewrites it to the backend. BACKEND_URL is a server-only env var (no
-  // NEXT_PUBLIC_ needed — the browser only ever sees the relative path).
+  // would be blocked, so the client calls relative `/api/...` and Next rewrites it
+  // to the backend. BACKEND_URL is a server-only env var (no NEXT_PUBLIC_ needed —
+  // the browser only ever sees the relative path).
+  //
+  // CRITICAL (MI-11 integration bug, Next 16 routing): an ARRAY-form `rewrites()`
+  // is an `afterFiles` rewrite. STATIC Route Handlers (e.g.
+  // app/api/contrataciones/route.ts, app/api/auth/login/route.ts) are "non-dynamic
+  // pages" checked BEFORE afterFiles, so they already shadow the rewrite without any
+  // exclusion. But DYNAMIC nested handlers
+  // (app/api/contrataciones/[id]/{proposal,confirm,start,finish,reject,cancel}) are
+  // "dynamic routes" checked AFTER afterFiles, so a blanket `/api/:path*` rewrite
+  // WINS and forwards them straight to the backend WITHOUT the session Bearer (the
+  // rewrite can't read the httpOnly cookie) → the backend answers 401 and the whole
+  // BFF auth loop is bypassed. We therefore exclude ONLY the `/api/contrataciones`
+  // prefix (which owns dynamic BFF handlers) from the catch-all via a negative
+  // lookahead, so those resolve to the filesystem handler that attaches the Bearer.
+  // Everything else under `/api/*` still proxies straight through — crucially the
+  // rewrite-only auth endpoints WITHOUT a local handler (`/api/auth/register`,
+  // `/api/auth/forgot-password`, `/api/auth/reset-password`) and the public catalog.
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
-        destination: `${process.env.BACKEND_URL ?? "http://localhost:3000"}/:path*`,
+        source: "/api/:path((?!contrataciones$|contrataciones/).*)",
+        destination: `${process.env.BACKEND_URL ?? "http://localhost:3000"}/:path`,
       },
     ];
   },

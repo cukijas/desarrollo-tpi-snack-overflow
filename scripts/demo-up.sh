@@ -3,7 +3,8 @@
 # demo-up.sh — One-shot demo launcher for Snack Overflow.
 #
 # Run once at presentation time. It:
-#   1. Brings up the Docker infra stack (Postgres + Redis).
+#   1. Brings up a CLEAN Docker infra stack (drops Postgres + Redis volumes first, so
+#      every demo starts on an empty DB with no leftover users/sessions/login-cache).
 #   2. Starts the NestJS backend (port 3000, dev/watch mode).
 #   3. Seeds the database with demo data (AFTER the backend is healthy — the seed
 #      creates contrataciones through the REAL API so the state machine stays consistent).
@@ -133,9 +134,17 @@ wait_for_http() {
   fail "$label did not become reachable within ${timeout}s. See logs in $LOG_DIR"
 }
 
-# ── 1. Docker infra ─────────────────────────────────────────────────────────────────
+# ── 1. Docker infra (CLEAN) ───────────────────────────────────────────────────────────
 start_infra() {
-  step "Bringing up Docker infra (Postgres + Redis)"
+  step "Bringing up a CLEAN Docker infra (Postgres + Redis)"
+  # Drop the named volumes (postgres_data, redis_data) so the demo ALWAYS starts on an
+  # empty database: no leftover users/contrataciones from prior runs, no stale Redis
+  # login-attempt cache. Sessions are stateless JWTs in a cookie, so a fresh DB + fresh
+  # Redis = a truly clean slate. The backend recreates the schema on boot via TypeORM
+  # `synchronize` (enabled when NODE_ENV != production), so dropping the volume is safe —
+  # there are no migrations to run.
+  info "wiping previous volumes (down -v) for a clean slate"
+  (cd "$ROOT_DIR" && docker compose down -v --remove-orphans) >/dev/null 2>&1 || true
   # Default compose (no --profile app) brings up ONLY postgres + redis.
   (cd "$ROOT_DIR" && docker compose up -d postgres redis) \
     || fail "docker compose up failed"

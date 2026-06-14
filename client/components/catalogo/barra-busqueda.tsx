@@ -24,7 +24,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
 import {
   Select,
@@ -33,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ComboboxUbicacion } from "@/components/catalogo/combobox-ubicacion";
 
 import { copy } from "@/lib/copy/es-AR";
 import { OFICIOS_SUGERIDOS } from "@/lib/catalogo/oficios";
@@ -63,10 +63,10 @@ export function BarraBusqueda({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   // Lets a chip click move focus to Ubicación after prefilling Oficio.
-  const ubicacionRef = useRef<HTMLInputElement | null>(null);
+  // Points at the location combobox trigger (a button, not a native input).
+  const ubicacionRef = useRef<HTMLButtonElement | null>(null);
 
   const {
-    register,
     handleSubmit,
     watch,
     setValue,
@@ -81,12 +81,11 @@ export function BarraBusqueda({
     },
   });
 
-  // `oficio` is controlled (Radix Select isn't a native input → no register()).
+  // Both fields are controlled: neither the Radix Select (oficio) nor the
+  // location combobox (ubicacion) is a native input, so we can't register()
+  // them — we watch the value and write it back via setValue.
   const oficio = watch("oficio");
-
-  // Merge RHF's ref with our focus ref so we can both register and focus it.
-  const { ref: ubicacionRegisterRef, ...ubicacionField } =
-    register("ubicacion");
+  const ubicacion = watch("ubicacion");
 
   function seleccionarOficio(label: string) {
     setValue("oficio", label, { shouldValidate: true });
@@ -162,20 +161,17 @@ export function BarraBusqueda({
           className="flex-1"
         >
           {({ id, describedBy, invalid }) => (
-            <Input
+            <ComboboxUbicacion
               id={id}
-              type="text"
-              placeholder={copy.catalogo.ubicacionPlaceholder}
-              autoComplete="off"
-              aria-required="true"
-              aria-invalid={invalid}
-              aria-describedby={describedBy}
-              disabled={isPending}
-              ref={(el) => {
-                ubicacionRegisterRef(el);
-                ubicacionRef.current = el;
+              value={ubicacion}
+              onChange={(value) => {
+                setValue("ubicacion", value, { shouldValidate: true });
+                clearErrors("ubicacion");
               }}
-              {...ubicacionField}
+              describedBy={describedBy}
+              invalid={invalid}
+              disabled={isPending}
+              triggerRef={ubicacionRef}
             />
           )}
         </Field>

@@ -208,7 +208,17 @@ export const copy = {
     oficioLabel: "Oficio",
     oficioPlaceholder: "Ej. Electricista",
     ubicacionLabel: "Ubicación",
-    ubicacionPlaceholder: "Ciudad, barrio o dirección",
+    ubicacionPlaceholder: "Ciudad o barrio",
+    // Location combobox (UC04, REQ-01). Pick ONE place from the curated list;
+    // the submitted value is the full Nominatim-geocodable string.
+    ubicacionCombobox: {
+      // Accessible name for the combobox trigger/input.
+      aria: "Buscar ubicación",
+      // Placeholder inside the filter field of the open popover.
+      buscarPlaceholder: "Escribí una ciudad o barrio",
+      // Shown when the typed query matches no location.
+      sinResultados: "No encontramos esa ubicación.",
+    },
     buscar: "Buscar",
     buscando: "Buscando…",
 

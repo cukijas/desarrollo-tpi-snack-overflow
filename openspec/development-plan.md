@@ -95,14 +95,14 @@ sprint quedan pendientes** — el `client/` sigue siendo el scaffold de Next.js.
 |---|--------|------|-----------|------------|--------|
 | **MI-01.1** | Modelo y persistencia de usuario | Backend | Romero | — | ✅ |
 | **MI-01.2** | Endpoint de registro (`POST /auth/register`) | Backend | Romero | MI-01.1 | ✅ |
-| **MI-01.3** | UI formulario de registro | Frontend | Romero | MI-01.2 | ⏳ |
+| **MI-01.3** | UI formulario de registro | Frontend | Romero | MI-01.2 | ✅ |
 | **MI-01.4** | Integración del WI al producto de sprint | Integración | Romero | 01.1–01.3 | 🟡 |
 | **MI-02.1** | Lógica de autenticación y JWT | Backend | Hillebrand | MI-01.1 | ✅ |
-| **MI-02.2** | UI login y manejo de sesión | Frontend | Hillebrand | MI-02.1 | ⏳ |
+| **MI-02.2** | UI login y manejo de sesión | Frontend | Hillebrand | MI-02.1 | ✅ |
 | **MI-02.3** | Integración del WI al producto de sprint | Integración | Hillebrand | 02.1–02.2 | 🟡 |
 | **MI-04.1** | Modelo y repositorio de prestador | Backend | Nieto | — | ✅ |
 | **MI-04.2** | Endpoint de búsqueda y filtros | Backend | Nieto | MI-04.1 | ✅ |
-| **MI-04.3** | UI listado y perfil de prestador | Frontend | Nieto | MI-02.2, MI-04.2 | ⏳ |
+| **MI-04.3** | UI listado y perfil de prestador | Frontend | Nieto | MI-02.2, MI-04.2 | ✅ |
 | **MI-04.4** | Integración del WI al producto de sprint | Integración | Nieto | 04.1–04.3 | 🟡 |
 | **MI-07.1** | Modelo y lógica de solicitud | Backend | Pirovani | MI-01.1, MI-04.1 | ✅ |
 | **MI-07.2** | Endpoint crear solicitud + UI | Full-stack | Pirovani | MI-02.2, 07.1, 09.1 | 🟡 |

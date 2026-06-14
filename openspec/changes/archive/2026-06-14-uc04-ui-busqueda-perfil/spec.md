@@ -31,11 +31,15 @@ Esta UI implementa la pantalla **pública** de búsqueda/listado de prestadores 
 | Oficio | `oficio` | Sí | Selección no vacía; combobox con las 7 categorías del catálogo (RF-2.1) |
 | Ubicación | `ubicacion` | Sí | Texto no vacío |
 
+> Los únicos filtros opcionales son **orden** y **calificación mínima** (ver REQ-02). El campo de **fecha** fue retirado (PA-06).
+
 El sistema MUST exigir **oficio** y **ubicación** antes de disparar la búsqueda. Si falta alguno, el submit MUST bloquearse en cliente (sin solicitud HTTP) y mostrar error inline en el campo faltante. Esto previene el 400 del backend ("El oficio es obligatorio" / "La ubicación es obligatoria"). Los filtros opcionales nunca son requeridos.
 
 ### REQ-02 — Filtros y ordenamiento opcionales
 
-El sistema MUST ofrecer filtros opcionales que se mapean a query params: orden (`orden`: `calificacion` default RN-CAT-03 | `distancia` | `disponibilidad`), calificación mínima (`calificacionMin`: 1..5), fecha de disponibilidad (`fecha`). El orden por defecto MUST ser "Calificación". Aplicar o cambiar un filtro/orden MUST re-ejecutar la búsqueda sin recarga de página completa y volver a `page=1`. El sistema MUST distinguir "Limpiar filtros" (vacía filtros adicionales, conserva oficio+ubicación) de "Restablecer" (vuelve a defaults: orden=calificación, page=1, pageSize=20). El sistema MUST NOT enviar params desconocidos (el backend usa whitelist y devolvería 400).
+El sistema MUST ofrecer filtros opcionales que se mapean a query params: orden (`orden`: `calificacion` default RN-CAT-03 | `distancia` | `disponibilidad`) y calificación mínima (`calificacionMin`: 1..5). El orden por defecto MUST ser "Calificación". Aplicar o cambiar un filtro/orden MUST re-ejecutar la búsqueda sin recarga de página completa y volver a `page=1`. El sistema MUST distinguir "Limpiar filtros" (vacía filtros adicionales, conserva oficio+ubicación) de "Restablecer" (vuelve a defaults: orden=calificación, page=1, pageSize=20). El sistema MUST NOT enviar params desconocidos (el backend usa whitelist y devolvería 400).
+
+> **Cambio (UC04 fix):** el filtro **fecha de disponibilidad** (`fecha`) se **retira** de la UI y del plumbing de query params. El backend UC04 lo aceptaba pero nunca lo aplicaba (filtro muerto), y un filtrado por fecha real requiere la agenda del prestador (UC06), aún no construida. Se conserva el **ordenamiento por disponibilidad**, que sí funciona. Ver PA-06 en `openspec/specs/catalogo/spec.md`.
 
 ### REQ-03 — Card de resultado (PrestadorResumen)
 
@@ -63,7 +67,7 @@ El sistema MUST manejar cuatro estados observables y diferenciados:
 
 ### REQ-06 — Paginación
 
-Los resultados MUST paginarse usando `page`/`pageSize` (default 20) y mostrar el total (`total`). El control MUST ser navegable por teclado, con la página actual marcada `aria-current="page"`. Cambiar de página MUST re-ejecutar la consulta sin recarga completa, preservando oficio, ubicación, filtros y orden vigentes.
+Los resultados MUST paginarse usando `page`/`pageSize` (default 20) y mostrar el total (`total`). El `total` que envía el backend MUST ser la cantidad **real** de prestadores que satisfacen todos los criterios incluyendo el filtro de zona de cobertura (RN-CAT-06), no la longitud de la página actual; la UI lo usa para calcular la cantidad de páginas. El control MUST ser navegable por teclado, con la página actual marcada `aria-current="page"`. Cambiar de página MUST re-ejecutar la consulta sin recarga completa, preservando oficio, ubicación, filtros y orden vigentes.
 
 ### REQ-07 — Pantalla de perfil público (PrestadorPerfil)
 

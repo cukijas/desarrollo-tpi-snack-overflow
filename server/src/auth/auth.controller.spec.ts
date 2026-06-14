@@ -776,5 +776,49 @@ describe('AuthController (API integration)', () => {
 
       expect(res.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
     });
+
+    // ESC-08 (RN-REG-01): administrador is NOT a self-registrable role.
+    // The DTO boundary must reject it as a validation failure (422) and
+    // no account must be created (privilege-escalation guard).
+    it('ESC-08: role administrador → 422, no account created (RN-REG-01)', async () => {
+      const { app, userRepo } = testApp;
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Eva',
+          lastName: 'Admin',
+          email: 'eva.admin@example.com',
+          phone: '+543764555000',
+          password: 'SecurePass7',
+          role: 'administrador',
+        });
+
+      expect(res.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      // No admin (nor any) account persisted
+      await expect(
+        userRepo.findByEmail('eva.admin@example.com'),
+      ).resolves.toBeNull();
+    });
+
+    // ESC-09 (RN-REG-03): prestador without trade → uniform validation
+    // failure code 422 (not 400).
+    it('ESC-09: role prestador without trade → 422 (RN-REG-03)', async () => {
+      const { app } = testApp;
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Pedro',
+          lastName: 'Prestador',
+          email: 'pedro.prestador@example.com',
+          phone: '+543764555111',
+          password: 'SecurePass8',
+          role: 'prestador',
+          // trade omitted on purpose
+        });
+
+      expect(res.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+    });
   });
 });

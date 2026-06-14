@@ -25,7 +25,7 @@ Permite que un **visitante** (usuario sin sesión) cree una cuenta en la platafo
 
 | ID | Regla |
 |----|-------|
-| RN-REG-01 | Un visitante puede registrarse únicamente con los roles `cliente` o `prestador`. El rol es obligatorio y **no se puede modificar** tras la creación de la cuenta. |
+| RN-REG-01 | Un visitante puede registrarse únicamente con los roles `cliente` o `prestador`. El rol es obligatorio y **no se puede modificar** tras la creación de la cuenta. El rol `administrador` **no** es auto-registrable: si llega en el payload, el sistema rechaza con HTTP 422 y **no** crea ninguna cuenta (defensa en profundidad: validación en el DTO y guarda en el servicio). |
 | RN-REG-02 | El e-mail debe ser único en el sistema. Si ya existe una cuenta con el mismo e-mail, el registro se rechaza con HTTP 409 sin revelar datos de la cuenta existente. |
 | RN-REG-03 | Son campos obligatorios: nombre, apellido, e-mail, teléfono, contraseña y rol. Todos deben cumplir el formato definido o el sistema rechaza con HTTP 422 indicando los campos a corregir. |
 | RN-REG-04 | La contraseña se almacena con hash **Argon2id** (mismo criterio que RN-AUTH-08). |
@@ -63,6 +63,18 @@ Permite que un **visitante** (usuario sin sesión) cree una cuenta en la platafo
 - **Dado** un visitante completando el formulario de registro
 - **Cuando** ingresa datos con formato incorrecto (e-mail sin arroba, contraseña < 8 caracteres, teléfono inválido) y confirma
 - **Entonces** el sistema identifica los campos con error de formato, responde HTTP 422 con la lista de campos a corregir, y **no** crea ninguna cuenta
+
+### ESC-08: Intento de auto-registro como administrador (RN-REG-01)
+
+- **Dado** un visitante (usuario sin sesión) en el flujo de registro
+- **Cuando** envía un `POST /auth/register` con `role: "administrador"` y el resto de los campos en formato válido
+- **Entonces** el sistema rechaza la solicitud con HTTP 422 (el rol no es auto-registrable), **no** crea ninguna cuenta y **no** persiste ningún dato; el rechazo ocurre tanto en la validación del DTO como en una guarda defensiva del servicio (defensa en profundidad)
+
+### ESC-09: Prestador sin oficio declarado (RN-REG-03)
+
+- **Dado** un visitante que selecciona rol `prestador`
+- **Cuando** confirma el registro sin declarar el campo `trade` (oficio), con el resto de los campos válidos
+- **Entonces** el sistema rechaza con HTTP 422 (oficio obligatorio para prestador, código uniforme de falla de validación) y **no** crea ninguna cuenta
 
 ### ESC-06: Correo electrónico ya registrado
 

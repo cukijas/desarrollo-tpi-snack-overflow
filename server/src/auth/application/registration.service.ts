@@ -1,9 +1,9 @@
 import {
-  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
   Logger,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { RegisterDto } from '../dto/register.dto.js';
@@ -34,6 +34,21 @@ export class RegistrationService {
     // Step 1: Normalize email to lowercase
     const normalizedEmail = dto.email.toLowerCase();
 
+    // RegistrableRole and UserRole share their string values; bridge the
+    // nominal enum gap once so the rest of the flow works in UserRole terms.
+    const role = dto.role as unknown as UserRole;
+
+    // Step 1b: Defense in depth (RN-REG-01, ESC-08). The DTO already restricts
+    // role to cliente/prestador, but the service must not trust its input: even
+    // if `administrador` slips past the boundary, reject it as a validation
+    // failure (422) before any persistence happens. Privilege-escalation guard.
+    if (role === UserRole.ADMINISTRADOR) {
+      this.logger.warn('REGISTER_REJECTED_NON_REGISTRABLE_ROLE');
+      throw new UnprocessableEntityException(
+        'Role is not allowed for self-registration.',
+      );
+    }
+
     // Step 2: Check duplicate email (ESC-06, RN-REG-02)
     const existing = await this.userRepo.findByEmail(normalizedEmail);
     if (existing) {
@@ -44,7 +59,7 @@ export class RegistrationService {
     // Step 3: Determine providerStatus
     let providerStatus: ProviderStatus | null = null;
 
-    if (dto.role === UserRole.PRESTADOR) {
+    if (role === UserRole.PRESTADOR) {
       // trade is required for prestador (validated in service per design §5.4)
       if (dto.trade) {
         const regulated = await this.regulatedTradeRepo.findByTradeName(
@@ -54,8 +69,11 @@ export class RegistrationService {
           ? ProviderStatus.PENDIENTE_HABILITACION
           : ProviderStatus.HABILITADO;
       } else {
-        // trade is required when role=prestador (design §5.4)
-        throw new BadRequestException('Trade is required for prestador role.');
+        // trade is required when role=prestador (design §5.4, RN-REG-03).
+        // Surfaced as 422 to match the uniform validation-failure code.
+        throw new UnprocessableEntityException(
+          'Trade is required for prestador role.',
+        );
       }
     }
     // else role === 'cliente' → providerStatus stays null (RN-REG-06, ESC-01)
@@ -70,7 +88,7 @@ export class RegistrationService {
       email: normalizedEmail,
       phone: dto.phone,
       passwordHash,
-      role: dto.role,
+      role,
       status: UserStatus.ACTIVO,
       providerStatus,
     });

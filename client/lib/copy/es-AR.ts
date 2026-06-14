@@ -173,6 +173,126 @@ export const copy = {
     strong: "Fuerte",
     label: "Fuerza de la contraseña",
   },
+
+  // UC04 — Public provider search + profile (spec §"Catálogo de mensajes").
+  catalogo: {
+    // Listing screen shell.
+    title: "Buscá prestadores",
+    subtitle: "Encontrá oficios de confianza en tu zona.",
+
+    // Search bar.
+    oficioLabel: "Oficio",
+    oficioPlaceholder: "Ej. Electricista",
+    oficioHelp: "Escribí el oficio que necesitás.",
+    ubicacionLabel: "Ubicación",
+    ubicacionPlaceholder: "Ciudad, barrio o dirección",
+    ubicacionHelp: "Indicá dónde necesitás el servicio.",
+    buscar: "Buscar",
+    buscando: "Buscando…",
+
+    // Client validation errors (REQ-01, ESC-UI-02).
+    errors: {
+      oficioRequerido: "Elegí un oficio.",
+      ubicacionRequerida: "Ingresá una ubicación.",
+    },
+
+    // Filters panel (REQ-02, ESC-UI-04).
+    filtros: {
+      title: "Filtros",
+      abrir: "Filtros",
+      cerrar: "Cerrar",
+      ordenLabel: "Ordenar por",
+      ordenCalificacion: "Calificación",
+      ordenDistancia: "Distancia",
+      ordenDisponibilidad: "Disponibilidad",
+      calificacionMinLabel: "Calificación mínima",
+      calificacionMinTodas: "Todas",
+      calificacionMinValor: "{n} estrellas o más",
+      fechaLabel: "Disponible desde",
+      limpiar: "Limpiar filtros",
+      restablecer: "Restablecer",
+    },
+
+    // Initial empty state before any search (deep-link / first visit, ADR-04-03).
+    inicial: {
+      titulo: "Buscá un oficio en tu zona",
+      cuerpo: "Elegí un oficio e ingresá una ubicación para ver prestadores.",
+    },
+
+    // Empty result state (200 with data:[] — neutral, NOT an error; ESC-UI-03).
+    vacio: {
+      // {oficio}/{ubicacion} interpolated at render time.
+      titulo: "No encontramos prestadores para {oficio} en {ubicacion}.",
+      cuerpo:
+        "Probá con otro oficio, ampliá la ubicación o quitá filtros.",
+      // Always-present location guidance (covers geocoding-fail without diagnosing it, S4).
+      guiaUbicacion:
+        "Si no aparece nada, revisá o precisá la ubicación e intentá de nuevo.",
+      cambiarOficio: "Probá con otro oficio.",
+      ampliarUbicacion: "Ampliá o precisá la ubicación.",
+      quitarFiltros: "Quitá filtros para ver más resultados.",
+    },
+
+    // Network / 5xx error state (role="alert"; ESC-UI-07).
+    error: {
+      titulo: "Algo salió mal de nuestro lado.",
+      cuerpo: "Intentá de nuevo en unos minutos.",
+      reintentar: "Reintentar",
+    },
+
+    // Results list (REQ-05/06).
+    resultados: {
+      // {total} interpolated; plural handled by the component.
+      totalSingular: "{total} prestador",
+      totalPlural: "{total} prestadores",
+      distancia: "A {km} km",
+    },
+
+    // Pagination (REQ-06).
+    paginacion: {
+      anterior: "Anterior",
+      siguiente: "Siguiente",
+      paginaActual: "Página {n}",
+      irAPagina: "Ir a la página {n}",
+      label: "Paginación de resultados",
+    },
+
+    // Availability badge labels (REQ-04). `proximaPrefijo` gets the date appended.
+    disponibilidad: {
+      disponibleEstaSemana: "Disponible esta semana",
+      proximaPrefijo: "Próxima",
+      sinDisponibilidad: "Sin disponibilidad",
+    },
+
+    // Accessible rating template (REQ-03/11). {valor} already es-AR-formatted.
+    calificacionAccesible: "{valor} de 5, {N} reseñas",
+    estrellasAria: "Calificación",
+
+    // Profile screen (REQ-07/08, ESC-UI-05).
+    perfil: {
+      volver: "Volver a la búsqueda",
+      zonaTitulo: "Zona de cobertura",
+      serviciosTitulo: "Servicios",
+      resenasTitulo: "Reseñas",
+      sinResenas: "Todavía no hay reseñas.",
+      sinServicios: "Este prestador aún no publicó servicios.",
+      precioDesde: "Desde ${min}",
+      precioHasta: "Hasta ${max}",
+      precioRango: "${min} – ${max}",
+      precioConsultar: "Precio a consultar",
+      clienteAnonimo: "Cliente",
+      // CTA "Solicitar" — placeholder to UC07/UC08 (REQ-08, ADR-04-06).
+      solicitar: "Solicitar",
+      solicitarProximamente:
+        "El flujo de contratación estará disponible próximamente.",
+    },
+
+    // Profile not-found screen (404 / 400 collapsed; REQ-09, ESC-UI-06).
+    noEncontrado: {
+      titulo: "No encontramos este prestador.",
+      cuerpo: "Volvé a la búsqueda para encontrar otros prestadores.",
+    },
+  },
 } as const;
 
 export type Copy = typeof copy;

@@ -293,6 +293,74 @@ export const copy = {
       cuerpo: "Volvé a la búsqueda para encontrar otros prestadores.",
     },
   },
+
+  // UC07 — Solicitar contratación (spec §"Catálogo de mensajes", REQ-01..14).
+  // S1: `franja` is FREE TEXT in the backend (DTO `franja: string`, non-empty;
+  // availability is validated server-side → 409 if taken). The select below is
+  // a curated es-AR convenience; the value SENT is the string literal, NOT an
+  // enum the backend enforces.
+  solicitud: {
+    // Page / form shell.
+    title: "Solicitar contratación",
+    // {prestador} interpolated with the provider's readable name (REQ-02).
+    subtitle: "Completá los datos para solicitarle a {prestador}.",
+    // Readable target line; {prestador} / {oficio} interpolated (REQ-02).
+    paraPrestador: "Le estás solicitando a {prestador}",
+
+    // Field labels (REQ-02, REQ-13).
+    ubicacionLabel: "Ubicación del trabajo",
+    ubicacionHelp: "¿Dónde se realiza el trabajo? Ciudad, barrio o dirección.",
+    fechaLabel: "Fecha",
+    fechaHelp: "Elegí hoy o una fecha futura.",
+    franjaLabel: "Franja horaria",
+    franjaPlaceholder: "Elegí una franja",
+    descripcionLabel: "Descripción del problema",
+    descripcionHelp: "Contanos qué necesitás resolver.",
+
+    submit: "Enviar solicitud",
+    submitting: "Enviando…",
+
+    // Curated time slots (S1). Values are FREE-TEXT strings sent to the backend.
+    franjas: [
+      "Mañana (08–12)",
+      "Mediodía (12–14)",
+      "Tarde (14–18)",
+      "Noche (18–22)",
+    ],
+
+    // Client / 400 field errors (spec §"Catálogo de mensajes").
+    errors: {
+      ubicacionRequerida: "Ingresá la ubicación del trabajo.",
+      franjaRequerida: "Elegí una franja horaria.",
+      descripcionRequerida: "Contanos qué necesitás resolver.",
+      fechaRequerida: "Elegí una fecha.",
+      fechaPasada: "La fecha debe ser hoy o una fecha futura.",
+    },
+
+    // CTA copy by user context (REQ-01, ESC-UI-02).
+    cta: {
+      anonimo: "Iniciá sesión para solicitar a este prestador.",
+      prestador: "Solo los clientes pueden solicitar una contratación.",
+    },
+
+    // Outcome messages (REQ-05/08/09/11).
+    exito:
+      "¡Solicitud enviada! El prestador la recibirá y te responderá con una propuesta.",
+    exitoTitulo: "¡Solicitud enviada!",
+    volverAlPerfil: "Volver al perfil",
+    // 409 — actionable, NOT a generic error (REQ-09).
+    franjaOcupada:
+      "Esa franja ya no está disponible. Elegí otra franja para tu solicitud.",
+    // 404 — provider no longer available (REQ-08).
+    noDisponible:
+      "Este prestador ya no está disponible para recibir solicitudes. Volvé a la búsqueda.",
+    volverABusqueda: "Volver a la búsqueda",
+    // network / 5xx (REQ-11) — non-technical, no traces.
+    redServer:
+      "No pudimos enviar tu solicitud. Revisá tu conexión e intentá de nuevo.",
+    // 400 fallback summary (role="alert") when no field maps (REQ-10).
+    validacionGenerica: "Revisá los datos del formulario.",
+  },
 } as const;
 
 export type Copy = typeof copy;

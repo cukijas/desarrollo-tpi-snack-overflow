@@ -9,9 +9,11 @@
  *
  * Logic: read the session cookie; if a PROTECTED path has no cookie or an
  * expired token, redirect 307 to /login?next=<original pathname>. Public paths
- * always pass through. The matcher is conservative (Supuesto S3): only the
- * placeholder protected area `/cuenta/*` is guarded today; everything public
- * (home, login, registro, recuperación, assets, /api/*) is untouched.
+ * always pass through. The matcher is conservative: the placeholder account
+ * area `/cuenta/*` plus the UC07 hiring request form
+ * `/prestadores/:id/solicitar` (ADR-07-02). Everything else public (home,
+ * login, registro, recuperación, assets, /api/*, AND the public provider
+ * profile `/prestadores/:id`) is untouched.
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -38,8 +40,10 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  // Only protect the placeholder account area for now (Supuesto S3). Excludes
-  // every public route, API handlers, and Next internals/assets implicitly by
-  // simply not matching them.
-  matcher: ["/cuenta/:path*"],
+  // Protect the account area and the UC07 hiring request form (ADR-07-02, S2).
+  // Two EXPLICIT entries: the literal `/solicitar` suffix means the public
+  // provider profile `/prestadores/:id` does NOT match (it has no `/solicitar`
+  // suffix) and stays accessible without a session. Everything else public
+  // (home, auth, assets, /api/*) is implicitly excluded by not matching.
+  matcher: ["/cuenta/:path*", "/prestadores/:id/solicitar"],
 };

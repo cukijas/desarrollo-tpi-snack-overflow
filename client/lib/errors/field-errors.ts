@@ -9,6 +9,7 @@ import type {
   RegisterResult,
   LoginResult,
 } from "@/lib/api/auth";
+import type { CrearSolicitudResult } from "@/lib/api/contrataciones";
 
 export type FieldKey =
   | "name"
@@ -149,6 +150,76 @@ export function mapLoginError(
       return null;
     default:
       return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UC07 — hiring request error mapping (ADR-07-03, REQ-07..11).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Field keys the request form can surface inline. */
+export type SolicitudFieldKey = "fecha" | "franja";
+
+/**
+ * Structured UI mapping for a failed `crearSolicitud`. The form interprets it:
+ *  - `redirect: true` (401)            → router.push('/login?next=…'); no message.
+ *  - `field` set (422/some 400)        → inline error under that field.
+ *  - `noDisponible: true` (404)        → "no disponible" + "Volver a la búsqueda".
+ *  - `reselectFranja: true` (409)      → actionable banner, keep data, reselect.
+ *  - `banner` set (403/400/network/5xx)→ role="alert" summary, retry allowed.
+ *
+ * NEVER exposes backend traces or internal detail (REQ-11) — every string is an
+ * es-AR catalog value.
+ */
+export interface MappedSolicitudError {
+  redirect?: true;
+  field?: { key: SolicitudFieldKey; message: string };
+  banner?: string;
+  noDisponible?: true;
+  reselectFranja?: true;
+}
+
+export function mapSolicitudError(
+  result: Extract<CrearSolicitudResult, { ok: false }>,
+): MappedSolicitudError {
+  switch (result.kind) {
+    case "unauthorized":
+      // 401 → treat as no session; the form redirects. No visible message.
+      return { redirect: true };
+
+    case "franja_ocupada":
+      // 409 → actionable, keep the rest of the data, reselect franja (REQ-09).
+      return {
+        banner: copy.solicitud.franjaOcupada,
+        reselectFranja: true,
+        field: { key: "franja", message: copy.solicitud.franjaOcupada },
+      };
+
+    case "prestador_no_disponible":
+      // 404 → provider gone; offer "Volver a la búsqueda" (REQ-08).
+      return { banner: copy.solicitud.noDisponible, noDisponible: true };
+
+    case "fecha_invalida":
+      // 422 → inline under Fecha (safety net behind client validation, REQ-10).
+      return {
+        field: { key: "fecha", message: copy.solicitud.errors.fechaPasada },
+      };
+
+    case "validation":
+      // 400 → no per-field mapping from this endpoint; generic summary (REQ-10).
+      return { banner: copy.solicitud.validacionGenerica };
+
+    case "forbidden":
+      // 403 → prevented client-side (REQ-01); last-resort generic message.
+      return { banner: copy.solicitud.cta.prestador };
+
+    case "network":
+    case "server":
+      // Transport / 5xx → non-technical banner, retry allowed (REQ-11).
+      return { banner: copy.solicitud.redServer };
+
+    default:
+      return { banner: copy.solicitud.redServer };
   }
 }
 

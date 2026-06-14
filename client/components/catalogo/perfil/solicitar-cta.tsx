@@ -1,46 +1,77 @@
 "use client";
 
 /**
- * "Solicitar" CTA (client, ADR-04-06, REQ-08, S5) — PLACEHOLDER entry point to
- * the future hiring flow (UC07/UC08). It does NOT create a contratación here.
+ * "Solicitar" CTA (client, ADR-07-04, REQ-01/07, ESC-UI-02, REQ-13) — entry
+ * point to the UC07 hiring flow. It does NOT create a contratación here; it
+ * routes to the protected request form (proxy.ts + backend enforce auth/role —
+ * the role read here is decorative, NOT authorization, ADR-07-04).
  *
- * - Anonymous → navigates to /login?next=/prestadores/{id} (reuses the UC02
- *   `next` pattern; hiring will require a session).
- * - Authenticated → shows a polite "Próximamente" notice (UC07/08 not built).
- *
- * Tagged `data-feature="uc07-uc08"` to trace the dependency.
+ * Three branches by session/role (REQ-01):
+ *  - cliente + authenticated → push to /prestadores/{id}/solicitar.
+ *  - anonymous               → push to /login?next=/prestadores/{id}/solicitar
+ *                              (preserves the destination to resume after login).
+ *  - prestador               → CTA disabled with an SR-perceivable explanation
+ *                              (a provider cannot hire; mirrors the backend 403).
  */
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { Alert } from "@/components/ui/alert";
 import { copy } from "@/lib/copy/es-AR";
 import { useSession } from "@/lib/session/session-context";
 
 export function SolicitarCta({ prestadorId }: { prestadorId: string }) {
   const router = useRouter();
-  const { status } = useSession();
-  const [showNotice, setShowNotice] = useState(false);
+  const { status, user } = useSession();
+
+  const destino = `/prestadores/${prestadorId}/solicitar`;
+  const isPrestador = status === "authenticated" && user?.role === "prestador";
+  const noticeId = `solicitar-cta-notice-${prestadorId}`;
 
   function onClick() {
     if (status === "authenticated") {
-      // UC07/08 not implemented yet — communicate, do not pretend.
-      setShowNotice(true);
+      // cliente (or any non-prestador authenticated role) → open the form.
+      router.push(destino);
       return;
     }
-    router.push(`/login?next=/prestadores/${prestadorId}`);
+    // Anonymous → login, preserving the destination to resume after auth.
+    router.push(`/login?next=${encodeURIComponent(destino)}`);
+  }
+
+  if (isPrestador) {
+    // Disabled with a perceivable explanation (REQ-01/07/13) — NOT color-only.
+    return (
+      <div className="flex flex-col gap-2" data-feature="uc07">
+        <Button
+          type="button"
+          size="lg"
+          disabled
+          aria-disabled="true"
+          aria-describedby={noticeId}
+          className="w-full sm:w-auto"
+        >
+          {copy.catalogo.perfil.solicitar}
+        </Button>
+        <p id={noticeId} className="text-sm text-muted-foreground">
+          {copy.solicitud.cta.prestador}
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-2" data-feature="uc07-uc08">
-      <Button type="button" size="lg" onClick={onClick} className="w-full sm:w-auto">
+    <div className="flex flex-col gap-2" data-feature="uc07">
+      <Button
+        type="button"
+        size="lg"
+        onClick={onClick}
+        className="w-full sm:w-auto"
+      >
         {copy.catalogo.perfil.solicitar}
       </Button>
-      {showNotice && (
-        <Alert variant="info" role="status">
-          {copy.catalogo.perfil.solicitarProximamente}
-        </Alert>
+      {status !== "authenticated" && (
+        <p className="text-sm text-muted-foreground">
+          {copy.solicitud.cta.anonimo}
+        </p>
       )}
     </div>
   );

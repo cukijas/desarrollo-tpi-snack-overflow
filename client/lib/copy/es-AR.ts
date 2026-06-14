@@ -202,13 +202,13 @@ export const copy = {
     title: "Buscá prestadores",
     subtitle: "Encontrá oficios de confianza en tu zona.",
 
-    // Search bar.
+    // Search bar. NOTE (DESIGN-SYSTEM §5.2/§5.12): no HelpText under these
+    // fields — the label + placeholder + required asterisk already communicate
+    // format and expectation; a help line would only duplicate them.
     oficioLabel: "Oficio",
     oficioPlaceholder: "Ej. Electricista",
-    oficioHelp: "Escribí el oficio que necesitás.",
     ubicacionLabel: "Ubicación",
     ubicacionPlaceholder: "Ciudad, barrio o dirección",
-    ubicacionHelp: "Indicá dónde necesitás el servicio.",
     buscar: "Buscar",
     buscando: "Buscando…",
 
@@ -235,9 +235,15 @@ export const copy = {
     },
 
     // Initial empty state before any search (deep-link / first visit, ADR-04-03).
+    // Doubles as first-use onboarding (§5.12): the popular-oficio chips are an
+    // actionable affordance — clicking one prefills Oficio (search still needs
+    // ubicación, UC04 ESC-07).
     inicial: {
       titulo: "Buscá un oficio en tu zona",
       cuerpo: "Elegí un oficio e ingresá una ubicación para ver prestadores.",
+      sugerenciasLabel: "Oficios populares",
+      // {oficio} interpolated — accessible name for each suggestion chip.
+      sugerenciaAria: "Buscar {oficio}",
     },
 
     // Empty result state (200 with data:[] — neutral, NOT an error; ESC-UI-03).

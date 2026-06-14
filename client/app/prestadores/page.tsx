@@ -67,6 +67,7 @@ export default async function PrestadoresPage({
         <BarraBusqueda
           defaults={{ oficio: criterios.oficio, ubicacion: criterios.ubicacion }}
           filtros={criterios}
+          mostrarSugerencias={!hasCriterios}
         />
       </div>
 
@@ -84,10 +85,16 @@ export default async function PrestadoresPage({
   );
 }
 
-/** Initial neutral state before any search (deep-link / first visit). */
+/**
+ * Initial neutral state before any search (deep-link / first visit). Solid
+ * surface card (DESIGN-SYSTEM §5.3/§6) — NOT a dashed placeholder, which read
+ * as an unfinished build artifact. The actionable popular-oficio chips live in
+ * the search panel above (BarraBusqueda mostrarSugerencias); this card carries
+ * the guiding copy and gives the pre-search view enough presence.
+ */
 function EstadoInicial() {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-6 py-16 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-surface px-6 py-16 text-center">
       <Search className="size-10 text-muted-foreground" aria-hidden="true" />
       <p className="text-base font-semibold text-foreground">
         {copy.catalogo.inicial.titulo}

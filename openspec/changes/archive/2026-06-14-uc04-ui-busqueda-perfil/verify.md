@@ -181,3 +181,9 @@ Recomendación: marcar 9.1-9.3, 10.3, 10.4 como `[x]` en `tasks.md`.
 **Veredicto: APROBADO-CON-OBSERVACIONES.** 148/148 unit + 20/20 E2E UC04 (76/76 full, Chromium) + lint/tsc limpios + smoke S1 resuelto + invariantes verificados. **1 bug crítico (BUG-001) hallado y arreglado** (búsqueda 422 → la pantalla de listado estaba completamente rota en runtime; fix trivial en el DTO backend).
 
 Diferido a follow-up (no bloqueante): E2E con backend seedeado para ESC-UI-01 (cards con data) / ESC-UI-05 (perfil completo) / ESC-UI-07 (5xx runtime) — OBS-02/03; matriz cross-browser completa en CI — OBS-01.
+
+---
+
+## 11. Cierre y archivado (2026-06-14)
+
+El flujo integrado de UC04 (búsqueda → resultados → perfil) quedó cubierto por la **verificación de sistema** `client/e2e/sistema.spec.ts` (E2E de sistema, ejecutado en la matriz cross-browser por CI según `openspec/development-plan.md` MI-11), que cierra a nivel de integración los diferidos OBS-01 (matriz multi-navegador) y OBS-02 (flujo con datos sembrados). Con esto el slice de UI se considera **verificado** y el cambio se **archiva el 2026-06-14**, cerrando el ciclo SDD. Las observaciones OBS-03/04/05 permanecen como notas de seguimiento no bloqueantes.

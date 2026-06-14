@@ -305,6 +305,22 @@ export const copy = {
     calificacionAccesible: "{valor} de 5, {N} reseñas",
     estrellasAria: "Calificación",
 
+    // Trust/engagement badges on the result card (DESIGN-SYSTEM §5.6). Each is
+    // an honest derivation of rating + review count (lib/catalogo/insignias.ts);
+    // text is always present so meaning is never color-only (WCAG 1.4.1).
+    insignias: {
+      // Premium trust — calificación >= 4,8 con muchas reseñas.
+      super: "Súper prestador",
+      // Alta demanda — muy elegido por clientes (muchas reseñas).
+      elegido: "Muy elegido",
+      // Recién sumado — todavía sin suficientes reseñas para destacar.
+      nuevo: "Nuevo",
+    },
+
+    // Avatar fallback (DESIGN-SYSTEM §5.11). The visual initials are decorative
+    // (aria-hidden); this is the accessible name. {nombre} interpolated.
+    avatarAlt: "Foto de {nombre}",
+
     // Profile screen (REQ-07/08, ESC-UI-05).
     perfil: {
       volver: "Volver a la búsqueda",

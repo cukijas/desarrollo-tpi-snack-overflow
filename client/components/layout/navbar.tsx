@@ -47,8 +47,10 @@ export function Navbar() {
       className="border-b border-border-strong bg-surface"
     >
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3">
-        {/* Left: brand → home + always-on Buscar. */}
-        <div className="flex items-center gap-1">
+        {/* Left: brand → home, then a divider, then the always-on Buscar nav
+            link — the divider + gap keep "Buscar" from reading as part of the
+            wordmark (it is a distinct destination, not the logo). */}
+        <div className="flex items-center gap-3">
           <Link
             href="/"
             aria-label={copy.nav.brandHome}
@@ -57,6 +59,10 @@ export function Navbar() {
           >
             {copy.nav.brand}
           </Link>
+          <span
+            aria-hidden="true"
+            className="hidden h-6 w-px bg-border-strong sm:block"
+          />
           <NavTextLink
             href="/prestadores"
             label={copy.nav.buscar}
@@ -69,10 +75,17 @@ export function Navbar() {
         <div className="hidden items-center gap-2 sm:flex">
           {isAuthenticated && (
             <span
-              className="flex items-center gap-2 text-sm text-muted-foreground"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground"
               data-testid="nav-account"
             >
-              <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-xs font-medium text-foreground">
+              {/* Role indicator — NOT a button: a muted dot + caption text, no
+                  pill/border/elevation, so it never competes with the real
+                  actions next to it (DESIGN-SYSTEM §5.1/§5.6). */}
+              <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <span
+                  aria-hidden="true"
+                  className="size-1.5 rounded-full bg-muted-foreground"
+                />
                 {roleLabel}
               </span>
               {session.user?.email && (

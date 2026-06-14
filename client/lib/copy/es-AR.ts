@@ -202,13 +202,23 @@ export const copy = {
     title: "Buscá prestadores",
     subtitle: "Encontrá oficios de confianza en tu zona.",
 
-    // Search bar.
+    // Search bar. NOTE (DESIGN-SYSTEM §5.2/§5.12): no HelpText under these
+    // fields — the label + placeholder + required asterisk already communicate
+    // format and expectation; a help line would only duplicate them.
     oficioLabel: "Oficio",
     oficioPlaceholder: "Ej. Electricista",
-    oficioHelp: "Escribí el oficio que necesitás.",
     ubicacionLabel: "Ubicación",
-    ubicacionPlaceholder: "Ciudad, barrio o dirección",
-    ubicacionHelp: "Indicá dónde necesitás el servicio.",
+    ubicacionPlaceholder: "Ciudad o barrio",
+    // Location combobox (UC04, REQ-01). Pick ONE place from the curated list;
+    // the submitted value is the full Nominatim-geocodable string.
+    ubicacionCombobox: {
+      // Accessible name for the combobox trigger/input.
+      aria: "Buscar ubicación",
+      // Placeholder inside the filter field of the open popover.
+      buscarPlaceholder: "Escribí una ciudad o barrio",
+      // Shown when the typed query matches no location.
+      sinResultados: "No encontramos esa ubicación.",
+    },
     buscar: "Buscar",
     buscando: "Buscando…",
 
@@ -235,9 +245,15 @@ export const copy = {
     },
 
     // Initial empty state before any search (deep-link / first visit, ADR-04-03).
+    // Doubles as first-use onboarding (§5.12): the popular-oficio chips are an
+    // actionable affordance — clicking one prefills Oficio (search still needs
+    // ubicación, UC04 ESC-07).
     inicial: {
       titulo: "Buscá un oficio en tu zona",
       cuerpo: "Elegí un oficio e ingresá una ubicación para ver prestadores.",
+      sugerenciasLabel: "Oficios populares",
+      // {oficio} interpolated — accessible name for each suggestion chip.
+      sugerenciaAria: "Buscar {oficio}",
     },
 
     // Empty result state (200 with data:[] — neutral, NOT an error; ESC-UI-03).
@@ -288,6 +304,22 @@ export const copy = {
     // Accessible rating template (REQ-03/11). {valor} already es-AR-formatted.
     calificacionAccesible: "{valor} de 5, {N} reseñas",
     estrellasAria: "Calificación",
+
+    // Trust/engagement badges on the result card (DESIGN-SYSTEM §5.6). Each is
+    // an honest derivation of rating + review count (lib/catalogo/insignias.ts);
+    // text is always present so meaning is never color-only (WCAG 1.4.1).
+    insignias: {
+      // Premium trust — calificación >= 4,8 con muchas reseñas.
+      super: "Súper prestador",
+      // Alta demanda — muy elegido por clientes (muchas reseñas).
+      elegido: "Muy elegido",
+      // Recién sumado — todavía sin suficientes reseñas para destacar.
+      nuevo: "Nuevo",
+    },
+
+    // Avatar fallback (DESIGN-SYSTEM §5.11). The visual initials are decorative
+    // (aria-hidden); this is the accessible name. {nombre} interpolated.
+    avatarAlt: "Foto de {nombre}",
 
     // Profile screen (REQ-07/08, ESC-UI-05).
     perfil: {

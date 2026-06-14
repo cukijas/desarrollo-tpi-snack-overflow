@@ -3,14 +3,21 @@ import { MapPin } from "lucide-react";
 
 import { copy } from "@/lib/copy/es-AR";
 import type { PrestadorResumen } from "@/lib/catalogo/tipos";
+import { AvatarPrestador } from "@/components/catalogo/avatar-prestador";
+import { InsigniasPrestador } from "@/components/catalogo/insignias-prestador";
 import { RatingDisplay } from "@/components/catalogo/rating-display";
 import { DisponibilidadBadge } from "@/components/catalogo/disponibilidad-badge";
 
 /**
  * Result card (Server Component, REQ-03/REQ-11, ESC-UI-01). The whole card is a
- * <Link> to /prestadores/:id — keyboard-navigable with native focus. Shows
- * name, oficio chips, rating (stars + accessible text), availability badge and
- * distance only when present. Min height keeps a ≥44px touch target.
+ * single <Link> to /prestadores/:id — keyboard-navigable with native focus.
+ *
+ * Layout (DESIGN-SYSTEM §5.3 "card resumen de prestador"): a header row with the
+ * fallback avatar (§5.11) + name + accessible rating; a prominent trust-badges
+ * row (§5.6 — the marketplace trust signal); oficio chips; and a footer with the
+ * availability badge + distance. Hover lifts the card (`shadow-md` +
+ * `-translate-y-0.5`, §5.3). Everything derives from EXISTING data — no photos,
+ * no fabricated fields. Min height keeps a >=44px touch target (§8).
  */
 export function PrestadorCard({ prestador }: { prestador: PrestadorResumen }) {
   const {
@@ -27,17 +34,22 @@ export function PrestadorCard({ prestador }: { prestador: PrestadorResumen }) {
   return (
     <Link
       href={`/prestadores/${id}`}
-      className="flex min-h-[44px] flex-col gap-3 rounded-lg border border-border bg-surface p-4 transition-colors hover:border-border-strong hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="flex min-h-[44px] flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm transition-[box-shadow,transform,border-color] hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
-      <div className="flex flex-col gap-1">
-        <h3 className="text-base font-semibold text-foreground">
-          {nombreCompleto}
-        </h3>
-        <RatingDisplay
-          valor={calificacionPromedio}
-          cantidadResenas={cantidadResenas}
-        />
+      <div className="flex items-start gap-3">
+        <AvatarPrestador nombreCompleto={nombreCompleto} tamano="md" decorativo />
+        <div className="flex min-w-0 flex-col gap-1">
+          <h3 className="truncate text-base font-semibold text-foreground">
+            {nombreCompleto}
+          </h3>
+          <RatingDisplay
+            valor={calificacionPromedio}
+            cantidadResenas={cantidadResenas}
+          />
+        </div>
       </div>
+
+      <InsigniasPrestador prestador={prestador} />
 
       {oficios.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">

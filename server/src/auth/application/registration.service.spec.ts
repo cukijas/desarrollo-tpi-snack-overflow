@@ -4,10 +4,14 @@
  *
  * All ports are mocked in-memory; no DB or Redis required.
  */
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  ConflictException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { RegistrationService } from './registration.service.js';
 import { ProviderStatus } from '../domain/provider-status.enum.js';
 import { UserRole } from '../domain/user-role.enum.js';
+import { RegistrableRole } from '../domain/registrable-role.enum.js';
 import { UserStatus } from '../domain/user-status.enum.js';
 import { RegisterDto } from '../dto/register.dto.js';
 import type { User } from '../domain/user.entity.js';
@@ -56,7 +60,7 @@ function makeRegisterDto(overrides: Partial<RegisterDto> = {}): RegisterDto {
   dto.email = 'Juan@Example.com'; // intentionally mixed case to test lowercasing
   dto.phone = '+543764123456';
   dto.password = 'SecurePass1';
-  dto.role = UserRole.CLIENTE;
+  dto.role = RegistrableRole.CLIENTE;
   dto.trade = undefined;
   return Object.assign(dto, overrides);
 }
@@ -92,7 +96,7 @@ describe('RegistrationService.register()', () => {
     });
     userRepo.create.mockResolvedValue(createdUser);
 
-    const dto = makeRegisterDto({ role: UserRole.CLIENTE });
+    const dto = makeRegisterDto({ role: RegistrableRole.CLIENTE });
     const result = await service.register(dto);
 
     // OCL post-conditions (design §6.1)
@@ -117,7 +121,7 @@ describe('RegistrationService.register()', () => {
     userRepo.create.mockResolvedValue(createdUser);
 
     const dto = makeRegisterDto({
-      role: UserRole.CLIENTE,
+      role: RegistrableRole.CLIENTE,
       password: 'MySecure1',
     });
     await service.register(dto);
@@ -139,7 +143,7 @@ describe('RegistrationService.register()', () => {
     userRepo.create.mockResolvedValue(createdUser);
 
     const dto = makeRegisterDto({
-      role: UserRole.PRESTADOR,
+      role: RegistrableRole.PRESTADOR,
       trade: 'plomero', // not in regulated list
     });
     const result = await service.register(dto);
@@ -165,7 +169,7 @@ describe('RegistrationService.register()', () => {
     userRepo.create.mockResolvedValue(createdUser);
 
     const dto = makeRegisterDto({
-      role: UserRole.PRESTADOR,
+      role: RegistrableRole.PRESTADOR,
       trade: 'gasista', // in regulated list
     });
     const result = await service.register(dto);
@@ -180,14 +184,33 @@ describe('RegistrationService.register()', () => {
     expect(regulatedTradeRepo.findByTradeName).toHaveBeenCalledWith('gasista');
   });
 
-  // WARNING-01: prestador without trade → 422 BadRequestException
-  it('WARNING-01: prestador without trade → BadRequestException (422)', async () => {
-    const { service } = makeMocks();
+  // ESC-09 (RN-REG-03): prestador without trade → 422 UnprocessableEntityException
+  it('ESC-09: prestador without trade → UnprocessableEntityException (422), no account created', async () => {
+    const { service, userRepo } = makeMocks();
+    userRepo.findByEmail.mockResolvedValue(null);
     const dto = makeRegisterDto({
-      role: UserRole.PRESTADOR,
+      role: RegistrableRole.PRESTADOR,
       trade: undefined,
     });
-    await expect(service.register(dto)).rejects.toThrow(BadRequestException);
+    await expect(service.register(dto)).rejects.toThrow(
+      UnprocessableEntityException,
+    );
+    expect(userRepo.create).not.toHaveBeenCalled();
+  });
+
+  // ESC-08 (RN-REG-01): defense in depth — even if administrador slips past
+  // the DTO, the service MUST reject it (422) and create no account.
+  it('ESC-08: role administrador → UnprocessableEntityException (422), no account created', async () => {
+    const { service, userRepo } = makeMocks();
+    userRepo.findByEmail.mockResolvedValue(null);
+    // Force an administrador role past the DTO boundary (cast — the DTO type
+    // only admits RegistrableRole, but we simulate a bypass).
+    const dto = makeRegisterDto();
+    (dto as unknown as { role: UserRole }).role = UserRole.ADMINISTRADOR;
+    await expect(service.register(dto)).rejects.toThrow(
+      UnprocessableEntityException,
+    );
+    expect(userRepo.create).not.toHaveBeenCalled();
   });
 
   // ESC-06: duplicate email → 409 ConflictException
@@ -250,7 +273,7 @@ describe('RegistrationService.register()', () => {
     userRepo.create.mockResolvedValue(createdUser);
 
     const dto = makeRegisterDto({
-      role: UserRole.CLIENTE,
+      role: RegistrableRole.CLIENTE,
       trade: 'gasista', // trade sent but role is cliente — should be ignored
     });
     const result = await service.register(dto);
@@ -278,7 +301,7 @@ describe('RegistrationService.register()', () => {
       lastName: 'García',
       email: 'MARIA@Example.com',
       phone: '+5491122334455',
-      role: UserRole.CLIENTE,
+      role: RegistrableRole.CLIENTE,
     });
     const result = await service.register(dto);
 

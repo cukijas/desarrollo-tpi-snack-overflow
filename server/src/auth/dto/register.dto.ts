@@ -7,7 +7,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { UserRole } from '../domain/user-role.enum.js';
+import { RegistrableRole } from '../domain/registrable-role.enum.js';
 
 export class RegisterDto {
   @IsString()
@@ -36,9 +36,11 @@ export class RegisterDto {
   @MaxLength(128)
   password: string;
 
-  @IsEnum(UserRole)
+  // RN-REG-01: only `cliente` / `prestador` are self-registrable.
+  // `administrador` is rejected at the DTO boundary (422 via global pipe).
+  @IsEnum(RegistrableRole)
   @IsNotEmpty()
-  role: UserRole;
+  role: RegistrableRole;
 
   @IsOptional()
   @IsString()

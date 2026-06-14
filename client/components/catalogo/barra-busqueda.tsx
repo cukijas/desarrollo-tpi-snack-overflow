@@ -7,8 +7,10 @@
  * startTransition(router.push). zod fails → block (NO router.push, NO HTTP),
  * inline error (aria-invalid + aria-describedby), focus the first missing field.
  *
- * `oficio` is FREE TEXT (the backend has no enum) — an <input> + <datalist> of
- * non-restrictive suggestions, NOT a Select. The only client rule is non-empty.
+ * `oficio` is picked from the curated TRADES taxonomy via an app-themed Select
+ * (the native <datalist> rendered a browser-styled popup inconsistent with the
+ * app, and free-text rarely matched the exact-string `categoria` filter). The
+ * submitted value is the label, matching how the catalog stores `categoria`.
  */
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -19,6 +21,13 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { copy } from "@/lib/copy/es-AR";
 import { OFICIOS_SUGERIDOS } from "@/lib/catalogo/oficios";
@@ -39,8 +48,6 @@ interface BarraBusquedaProps {
   filtros: Partial<CriteriosBusqueda>;
 }
 
-const OFICIOS_DATALIST_ID = "oficios-sugeridos";
-
 export function BarraBusqueda({ defaults, filtros }: BarraBusquedaProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -48,6 +55,9 @@ export function BarraBusqueda({ defaults, filtros }: BarraBusquedaProps) {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useForm<BusquedaFormValues>({
     resolver: zodResolver(busquedaSchema),
@@ -57,6 +67,9 @@ export function BarraBusqueda({ defaults, filtros }: BarraBusquedaProps) {
       ubicacion: defaults.ubicacion ?? busquedaDefaults.ubicacion,
     },
   });
+
+  // `oficio` is controlled (Radix Select isn't a native input → no register()).
+  const oficio = watch("oficio");
 
   function onSubmit(values: BusquedaFormValues) {
     // zod already passed → build criteria preserving current filters, page=1.
@@ -89,25 +102,30 @@ export function BarraBusqueda({ defaults, filtros }: BarraBusquedaProps) {
         className="flex-1"
       >
         {({ id, describedBy, invalid }) => (
-          <>
-            <Input
+          <Select
+            value={oficio || undefined}
+            onValueChange={(value) => {
+              setValue("oficio", value, { shouldValidate: true });
+              clearErrors("oficio");
+            }}
+            disabled={isPending}
+          >
+            <SelectTrigger
               id={id}
-              type="text"
-              list={OFICIOS_DATALIST_ID}
-              placeholder={copy.catalogo.oficioPlaceholder}
-              autoComplete="off"
               aria-required="true"
               aria-invalid={invalid}
               aria-describedby={describedBy}
-              disabled={isPending}
-              {...register("oficio")}
-            />
-            <datalist id={OFICIOS_DATALIST_ID}>
+            >
+              <SelectValue placeholder={copy.catalogo.oficioPlaceholder} />
+            </SelectTrigger>
+            <SelectContent>
               {OFICIOS_SUGERIDOS.map((o) => (
-                <option key={o.value} value={o.label} />
+                <SelectItem key={o.value} value={o.label}>
+                  {o.label}
+                </SelectItem>
               ))}
-            </datalist>
-          </>
+            </SelectContent>
+          </Select>
         )}
       </Field>
 

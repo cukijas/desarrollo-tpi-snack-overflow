@@ -14,10 +14,7 @@ import {
   type IServicioRepository,
 } from '../ports/servicio-repository.port.js';
 import { PrestadorResumen } from '../dto/prestador-resumen.dto.js';
-import {
-  PrestadorPerfil,
-  ServicioDto,
-} from '../dto/prestador-perfil.dto.js';
+import { PrestadorPerfil, ServicioDto } from '../dto/prestador-perfil.dto.js';
 
 @Injectable()
 export class TypeOrmPrestadorRepository implements IPrestadorRepository {

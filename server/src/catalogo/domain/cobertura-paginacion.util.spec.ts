@@ -40,13 +40,19 @@ describe('filtrarYPaginarPorCobertura', () => {
   it('the requested page is sliced AFTER the coverage filter (pages fill correctly)', () => {
     // pageSize 2: page 1 → [1,3], page 2 → [5,6], page 3 → [8,10].
     expect(
-      filtrarYPaginarPorCobertura(CANDIDATOS, cubre, 1, 2).data.map((c) => c.id),
+      filtrarYPaginarPorCobertura(CANDIDATOS, cubre, 1, 2).data.map(
+        (c) => c.id,
+      ),
     ).toEqual([1, 3]);
     expect(
-      filtrarYPaginarPorCobertura(CANDIDATOS, cubre, 2, 2).data.map((c) => c.id),
+      filtrarYPaginarPorCobertura(CANDIDATOS, cubre, 2, 2).data.map(
+        (c) => c.id,
+      ),
     ).toEqual([5, 6]);
     expect(
-      filtrarYPaginarPorCobertura(CANDIDATOS, cubre, 3, 2).data.map((c) => c.id),
+      filtrarYPaginarPorCobertura(CANDIDATOS, cubre, 3, 2).data.map(
+        (c) => c.id,
+      ),
     ).toEqual([8, 10]);
   });
 
@@ -66,12 +72,7 @@ describe('filtrarYPaginarPorCobertura', () => {
   });
 
   it('zero matches → empty page and total 0', () => {
-    const result = filtrarYPaginarPorCobertura(
-      CANDIDATOS,
-      () => false,
-      1,
-      20,
-    );
+    const result = filtrarYPaginarPorCobertura(CANDIDATOS, () => false, 1, 20);
     expect(result.data).toEqual([]);
     expect(result.total).toBe(0);
   });

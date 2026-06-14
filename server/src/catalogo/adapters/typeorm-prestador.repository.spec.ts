@@ -100,8 +100,9 @@ function fakeQueryBuilder(rows: Prestador[]) {
 function makeRepo(rows: Prestador[], servicioRepo?: IServicioRepository) {
   const prestadorRepo = {
     createQueryBuilder: jest.fn(() => fakeQueryBuilder(rows)),
-    findOne: jest.fn(async ({ where }: { where: { id: string } }) =>
-      rows.find((r) => r.id === where.id) ?? null,
+    findOne: jest.fn(
+      async ({ where }: { where: { id: string } }) =>
+        rows.find((r) => r.id === where.id) ?? null,
     ),
   };
 

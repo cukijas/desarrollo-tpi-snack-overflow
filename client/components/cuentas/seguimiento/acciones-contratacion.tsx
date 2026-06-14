@@ -103,6 +103,12 @@ export function AccionesContratacion({
     if (result.ok) {
       toast.success(SUCCESS_COPY[accion]);
       setPendingConfirm(null);
+      // Clear `busy` on success too: router.refresh() is a SOFT refresh that
+      // re-runs the server fetch WITHOUT remounting this client component, so a
+      // lingering `busy` would keep every action button disabled after the new
+      // estado renders (a user would have to hard-reload before acting again).
+      // Found via the MI-11 system E2E (iniciar → finalizar in one session).
+      setBusy(null);
       router.refresh();
       return;
     }

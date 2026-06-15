@@ -27,3 +27,13 @@ Adoptar **TypeORM** como ORM del backend para todos los módulos.
 - (−) Type-safety inferior a Prisma (queries no totalmente tipadas); se mitiga con DTOs validados.
 - (−) Acopla las entidades al runtime de TypeORM (decoradores). Sustituir el ORM impactaría solo a
   los adaptadores, no al dominio (gracias a los puertos).
+
+## Actualización (Construcción — 2026-06-14)
+
+La consecuencia "(+) Migraciones y entidades versionadas junto al código" es **aspiracional /
+post-MVP**. Estado actual: el esquema se gestiona con `synchronize` de TypeORM en los entornos
+`dev` y `test`; las migraciones formales se agregarán antes del despliegue a producción (ver
+Actualización de ADR-003 para justificación y decisión de diferimiento).
+
+Esta desviación es temporal y acotada a la fase de Construcción temprana, cuando el modelo de
+datos aún está en flujo. Decisión aceptada.

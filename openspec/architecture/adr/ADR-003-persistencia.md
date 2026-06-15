@@ -25,3 +25,30 @@ necesitan aceleración.
 - (+) Modelo de datos único, simple de razonar y respaldar.
 - (−) Acoplamiento al esquema compartido y punto único de contención → mitigar con índices,
   réplicas de lectura y disciplina de caché (invalidación).
+
+## Actualización (Construcción — 2026-06-14)
+
+### Sesiones / caché
+
+La decisión original contemplaba Redis como caché de consultas frecuentes **y** almacén de
+sesiones. La implementación adoptó **autenticación JWT stateless**: no existe almacén de sesiones
+server-side. Redis se emplea para **estado efímero de corta vida** (contadores de intentos de
+login y lockout de cuenta). La caché de consultas de búsqueda queda **diferida**: hoy las
+búsquedas consultan PostgreSQL directamente.
+
+Justificación: una API stateless simplifica el escalado horizontal y elimina el estado de sesión
+como punto de fallo. La caché de queries se introducirá cuando los RNF de performance (E.1/E.2)
+lo exijan con datos de carga real. El espíritu del ADR se sostiene — Redis sigue siendo el
+almacén de estado efímero del sistema — ; la letra se ajusta a la realidad de la fase.
+Decisión aceptada.
+
+### Gestión de esquema
+
+El esquema se gestiona con la opción `synchronize` de TypeORM activada en entornos `dev` y
+`test` (`synchronize: NODE_ENV !== 'production'`), ya desactivada en producción. Las
+**migraciones formales quedan diferidas** al momento previo al despliegue a producción.
+
+Justificación: en iteración temprana el modelo de datos está en flujo; introducir y mantener
+migraciones antes de que el esquema se estabilice es costo prematuro. Esta diferencia se
+registra también en ADR-007 (cross-ref).
+Decisión aceptada.

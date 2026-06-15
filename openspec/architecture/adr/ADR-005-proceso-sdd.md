@@ -46,3 +46,21 @@ el único agente persistente; los cuatro sub-agentes son efímeros. Cada artefac
 - (+) IA gobernada por compuertas humanas; memoria persistente sobrevive entre sesiones.
 - (−) Overhead de proceso por micro-incremento; requiere disciplina en las compuertas.
 - (−) Dependencia de la calidad del contexto inyectado (`openspec/project.md`).
+
+## Actualización (Construcción — 2026-06-14)
+
+El artefacto `proposal.md` (primera etapa explícita del pipeline según la convención original)
+es **opcional** en la práctica efectiva del equipo. El flujo SDD real es:
+
+```
+spec.md → design.md → (tasks.md) → verify.md
+```
+
+La fase de propuesta se resuelve en la conversación de la compuerta HITL entre el Coordinador y
+el desarrollador; no se persiste como artefacto separado.
+
+Justificación: para micro-incrementos pequeños y bien delimitados, escribir un `proposal.md`
+duplica lo que la `spec.md` ya captura, sin añadir valor de trazabilidad. La compuerta HITL
+previa a la spec cumple la función de validar intención y alcance. La convención de la carpeta
+`openspec/changes/README.md` se actualiza para reflejar que `proposal.md` es opcional.
+Decisión de proceso aceptada.

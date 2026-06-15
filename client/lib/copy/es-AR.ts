@@ -460,6 +460,9 @@ export const copy = {
     presupuestar: "Presupuestar",
     presupuestando: "Enviando…",
     precioPlaceholder: "Ej. 15000",
+    justificacionLabel: "Justificación del precio",
+    justificacionPlaceholder:
+      "Explicá brevemente cómo llegaste a este precio (opcional)",
     franjaPlaceholder: "Elegí una franja",
     enviarPropuesta: "Enviar propuesta",
     cancelarAccion: "Cancelar",
@@ -493,6 +496,7 @@ export const copy = {
       fechaRequerida: "Elegí una fecha.",
       fechaPasada: "La fecha de la propuesta debe ser hoy o una fecha futura.",
       franjaRequerida: "Elegí una franja horaria para la propuesta.",
+      justificacionMaxLength: "La justificación no puede superar los 500 caracteres.",
     },
   },
 
@@ -511,6 +515,9 @@ export const copy = {
     fechaLabel: "Fecha",
     franjaLabel: "Franja",
     precioLabel: "Precio estimado",
+    fechaPropuestaLabel: "Fecha propuesta",
+    franjaPropuestaLabel: "Franja propuesta",
+    justificacionLabel: "Justificación del precio",
 
     // Filter (REQ-05 — activas vs. terminadas).
     filtroLabel: "Filtrar por estado",

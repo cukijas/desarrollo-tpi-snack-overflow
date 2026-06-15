@@ -56,8 +56,8 @@ export interface DateInputProps {
   className?: string;
   /** Minimum allowed date in YYYY-MM-DD format (not enforced in UI, only schema). */
   min?: string;
-  "aria-required"?: string | boolean;
-  "aria-invalid"?: string | boolean;
+  "aria-required"?: React.AriaAttributes["aria-required"];
+  "aria-invalid"?: React.AriaAttributes["aria-invalid"];
   "aria-describedby"?: string;
 }
 

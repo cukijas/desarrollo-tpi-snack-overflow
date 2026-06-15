@@ -82,14 +82,14 @@
  * primary only reaches ~3:1, fails AA; dark ink reaches ~6:1).
  * -------------------------------------------------------------------------- */
 .dark {
-  --color-background: #1a1715;
-  --color-surface: #252019;
-  --color-surface-raised: #2e2820;
-  --color-surface-sunken: #15110f;
-  --color-foreground: #f5f1ea;
-  --color-muted-foreground: #a89e94;
-  --color-border: #3a332c;
-  --color-border-strong: #4d4439;
+  --color-background: #121316;
+  --color-surface: #1b1c20;
+  --color-surface-raised: #232528;
+  --color-surface-sunken: #0d0e10;
+  --color-foreground: #eeedea;
+  --color-muted-foreground: #9ca0a8;
+  --color-border: #33353b;
+  --color-border-strong: #43464c;
   --color-ring: #60a5fa;
   --color-primary: #60a5fa;
   --color-primary-hover: #93c5fd;

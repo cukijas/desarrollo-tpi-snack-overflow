@@ -67,7 +67,7 @@ export function BandejaTabs({
         return (
           <button
             key={tab.id}
-            ref={(el) => (buttonRefs.current[index] = el)}
+            ref={(el) => { buttonRefs.current[index] = el; }}
             role="tab"
             aria-selected={isActive}
             aria-controls={`panel-${tab.id}`}

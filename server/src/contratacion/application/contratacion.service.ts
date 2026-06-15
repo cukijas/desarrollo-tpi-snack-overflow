@@ -7,12 +7,6 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { UserRole } from '../../auth/domain/user-role.enum.js';
-import { UserStatus } from '../../auth/domain/user-status.enum.js';
-import {
-  USER_REPOSITORY,
-  type IUserRepository,
-} from '../../auth/ports/user.repository.port.js';
 import { Contratacion } from '../domain/contratacion.entity.js';
 import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 import { CreateContratacionDto } from '../dto/create-contratacion.dto.js';
@@ -25,6 +19,11 @@ import {
   AVAILABILITY_SERVICE,
   type IAvailabilityService,
 } from '../ports/availability-service.port.js';
+import {
+  PARTICIPANT_DIRECTORY,
+  ParticipantRole,
+  type IParticipantDirectory,
+} from '../ports/participant-directory.port.js';
 import {
   CONTRATACION_REPOSITORY,
   type ContratacionFiltro,
@@ -46,7 +45,8 @@ export class ContratacionService {
   constructor(
     @Inject(TRANSACTION_RUNNER)
     private readonly txRunner: ITransactionRunner,
-    @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,
+    @Inject(PARTICIPANT_DIRECTORY)
+    private readonly participants: IParticipantDirectory,
     @Inject(CONTRATACION_REPOSITORY)
     private readonly contratacionRepo: IContratacionRepository,
     @Inject(AVAILABILITY_SERVICE)
@@ -83,19 +83,17 @@ export class ContratacionService {
     clienteRole: string,
   ): Promise<ContratacionResponseDto> {
     // ── Authorization gate (RNF-S.1 / RN-CON-01) — outside tx ──
-    if ((clienteRole as UserRole) !== UserRole.CLIENTE) {
+    if ((clienteRole as ParticipantRole) !== ParticipantRole.CLIENTE) {
       throw new ForbiddenException(
         'Only authenticated clients can create contrataciones.',
       );
     }
 
-    // ── Validate prestador exists and is active (RN-CON-05) — outside tx ──
-    const prestador = await this.userRepo.findById(dto.prestadorId);
-    if (
-      !prestador ||
-      prestador.role !== UserRole.PRESTADOR ||
-      prestador.status !== UserStatus.ACTIVO
-    ) {
+    // ── Validate prestador exists, has the PRESTADOR role and is active
+    //    (RN-CON-05) — outside tx ──
+    const prestadorRole = await this.participants.getRole(dto.prestadorId);
+    const prestadorActive = await this.participants.isActive(dto.prestadorId);
+    if (prestadorRole !== ParticipantRole.PRESTADOR || !prestadorActive) {
       throw new NotFoundException('Prestador not found or not available.');
     }
 
@@ -228,7 +226,7 @@ export class ContratacionService {
     query: ListContratacionesQueryDto,
   ): Promise<ContratacionListItemDto[]> {
     const filtro: ContratacionFiltro = { estado: query.estado };
-    if ((role as UserRole) === UserRole.PRESTADOR) {
+    if ((role as ParticipantRole) === ParticipantRole.PRESTADOR) {
       filtro.prestadorId = userId;
     } else {
       filtro.clienteId = userId;
@@ -239,22 +237,18 @@ export class ContratacionService {
 
     return Promise.all(
       contrataciones.map(async (c) => {
-        // Both participants are resolved via USER_REPOSITORY: `clienteId` is a
-        // user id directly, and `prestadorId` references the Prestador catalog
-        // row whose PK IS the provider's user id (the create flow validates it
-        // through userRepo.findById with role PRESTADOR). So the same lookup
-        // mirrors clienteNombre for prestadorNombre. N+1 accepted for the TPI
-        // (documented limit, ADR-08-02); null falls back to a placeholder.
-        const [cliente, prestador] = await Promise.all([
-          this.userRepo.findById(c.clienteId),
-          this.userRepo.findById(c.prestadorId),
+        // Both participants are resolved via PARTICIPANT_DIRECTORY: `clienteId`
+        // is a user id directly, and `prestadorId` references the Prestador
+        // catalog row whose PK IS the provider's user id (the create flow
+        // validates it through the directory with role PRESTADOR). So the same
+        // lookup mirrors clienteNombre for prestadorNombre. N+1 accepted for the
+        // TPI (documented limit, ADR-08-02); null falls back to a placeholder.
+        const [clienteNombreRaw, prestadorNombreRaw] = await Promise.all([
+          this.participants.getDisplayName(c.clienteId),
+          this.participants.getDisplayName(c.prestadorId),
         ]);
-        const clienteNombre = cliente
-          ? `${cliente.name} ${cliente.lastName}`
-          : 'Cliente';
-        const prestadorNombre = prestador
-          ? `${prestador.name} ${prestador.lastName}`
-          : 'Prestador';
+        const clienteNombre = clienteNombreRaw ?? 'Cliente';
+        const prestadorNombre = prestadorNombreRaw ?? 'Prestador';
         return new ContratacionListItemDto({
           id: c.id,
           ubicacion: c.ubicacion,
@@ -300,18 +294,14 @@ export class ContratacionService {
       throw new NotFoundException('Contratación not found.');
     }
 
-    const [cliente, prestador, history] = await Promise.all([
-      this.userRepo.findById(contratacion.clienteId),
-      this.userRepo.findById(contratacion.prestadorId),
+    const [clienteNombreRaw, prestadorNombreRaw, history] = await Promise.all([
+      this.participants.getDisplayName(contratacion.clienteId),
+      this.participants.getDisplayName(contratacion.prestadorId),
       this.stateMachine.getHistory(contratacion.id),
     ]);
 
-    const clienteNombre = cliente
-      ? `${cliente.name} ${cliente.lastName}`
-      : 'Cliente';
-    const prestadorNombre = prestador
-      ? `${prestador.name} ${prestador.lastName}`
-      : 'Prestador';
+    const clienteNombre = clienteNombreRaw ?? 'Cliente';
+    const prestadorNombre = prestadorNombreRaw ?? 'Prestador';
 
     return new ContratacionDetailDto({
       id: contratacion.id,
@@ -346,7 +336,7 @@ export class ContratacionService {
     role: string,
   ): Promise<ContratacionResponseDto> {
     // 1. Only PRESTADOR can send proposals (RN-CON-01)
-    if ((role as UserRole) !== UserRole.PRESTADOR) {
+    if ((role as ParticipantRole) !== ParticipantRole.PRESTADOR) {
       throw new ForbiddenException('Only prestadores can send proposals.');
     }
 
@@ -430,7 +420,7 @@ export class ContratacionService {
     role: string,
   ): Promise<ContratacionResponseDto> {
     // 1. Only PRESTADOR can reject requests (RN-CON-01)
-    if ((role as UserRole) !== UserRole.PRESTADOR) {
+    if ((role as ParticipantRole) !== ParticipantRole.PRESTADOR) {
       throw new ForbiddenException('Only prestadores can reject requests.');
     }
 
@@ -500,7 +490,7 @@ export class ContratacionService {
     role: string,
   ): Promise<ContratacionResponseDto> {
     // 1. Only CLIENTE can confirm (RN-CON-01)
-    if ((role as UserRole) !== UserRole.CLIENTE) {
+    if ((role as ParticipantRole) !== ParticipantRole.CLIENTE) {
       throw new ForbiddenException('Only clients can confirm proposals.');
     }
 
@@ -546,7 +536,7 @@ export class ContratacionService {
     role: string,
   ): Promise<ContratacionResponseDto> {
     // 1. Only PRESTADOR can start work
-    if ((role as UserRole) !== UserRole.PRESTADOR) {
+    if ((role as ParticipantRole) !== ParticipantRole.PRESTADOR) {
       throw new ForbiddenException('Only prestadores can start work.');
     }
 
@@ -591,7 +581,7 @@ export class ContratacionService {
     role: string,
   ): Promise<ContratacionResponseDto> {
     // 1. Only PRESTADOR can finish work
-    if ((role as UserRole) !== UserRole.PRESTADOR) {
+    if ((role as ParticipantRole) !== ParticipantRole.PRESTADOR) {
       throw new ForbiddenException('Only prestadores can finish work.');
     }
 

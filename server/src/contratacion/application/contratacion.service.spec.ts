@@ -18,10 +18,6 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { UserRole } from '../../auth/domain/user-role.enum.js';
-import { UserStatus } from '../../auth/domain/user-status.enum.js';
-import type { User } from '../../auth/domain/user.entity.js';
-import type { IUserRepository } from '../../auth/ports/user.repository.port.js';
 import type {
   ITransactionRunner,
   TxContext,
@@ -31,6 +27,10 @@ import type { Contratacion } from '../domain/contratacion.entity.js';
 import { CreateContratacionDto } from '../dto/create-contratacion.dto.js';
 import { ListContratacionesQueryDto } from '../dto/list-contrataciones-query.dto.js';
 import type { IAvailabilityService } from '../ports/availability-service.port.js';
+import {
+  ParticipantRole,
+  type IParticipantDirectory,
+} from '../ports/participant-directory.port.js';
 import type { IContratacionRepository } from '../ports/contratacion-repository.port.js';
 import type { IContratacionStateMachine } from '../ports/state-machine.port.js';
 import { ContratacionService } from './contratacion.service.js';
@@ -255,36 +255,61 @@ class FakeStateMachine implements IContratacionStateMachine {
 // Builders
 // ---------------------------------------------------------------------------
 
-function makePrestador(overrides: Partial<User> = {}): User {
-  return {
-    id: 'prestador-uuid-1',
-    name: 'Juan',
-    lastName: 'Pérez',
-    email: 'prestador@example.com',
-    passwordHash: 'hash',
-    role: UserRole.PRESTADOR,
-    status: UserStatus.ACTIVO,
-    providerStatus: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    ...overrides,
-  } as User;
+/**
+ * A participant as the contratación module sees it (via IParticipantDirectory):
+ * a role, an active flag and a display name. No auth domain types involved.
+ */
+interface FakeParticipant {
+  role: ParticipantRole | null;
+  active: boolean;
+  displayName: string;
 }
 
-function makeCliente(overrides: Partial<User> = {}): User {
+function makePrestador(
+  overrides: Partial<FakeParticipant> = {},
+): FakeParticipant {
   return {
-    id: 'cliente-uuid-1',
-    name: 'Ana',
-    lastName: 'Gómez',
-    email: 'cliente@example.com',
-    passwordHash: 'hash',
-    role: UserRole.CLIENTE,
-    status: UserStatus.ACTIVO,
-    providerStatus: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    role: ParticipantRole.PRESTADOR,
+    active: true,
+    displayName: 'Juan Pérez',
     ...overrides,
-  } as User;
+  };
+}
+
+function makeCliente(
+  overrides: Partial<FakeParticipant> = {},
+): FakeParticipant {
+  return {
+    role: ParticipantRole.CLIENTE,
+    active: true,
+    displayName: 'Ana Gómez',
+    ...overrides,
+  };
+}
+
+/** Wires a jest.Mocked directory to resolve a single participant for all ids. */
+function directoryFor(
+  participant: FakeParticipant | null,
+): jest.Mocked<IParticipantDirectory> {
+  return {
+    getRole: jest.fn().mockResolvedValue(participant?.role ?? null),
+    isActive: jest.fn().mockResolvedValue(participant?.active ?? false),
+    getDisplayName: jest
+      .fn()
+      .mockResolvedValue(participant ? participant.displayName : null),
+  };
+}
+
+/** Configures an existing jest.Mocked directory to resolve one participant. */
+function seedDirectory(
+  participants: jest.Mocked<IParticipantDirectory>,
+  participant: FakeParticipant | null,
+): void {
+  participants.getRole.mockResolvedValue(participant?.role ?? null);
+  participants.isActive.mockResolvedValue(participant?.active ?? false);
+  participants.getDisplayName.mockResolvedValue(
+    participant ? participant.displayName : null,
+  );
 }
 
 function makeCreateDto(
@@ -321,11 +346,10 @@ function makeMocks() {
   const store = new InMemoryStore();
   const txRunner = new FakeTransactionRunner(store);
 
-  const userRepo: jest.Mocked<IUserRepository> = {
-    findByEmail: jest.fn(),
-    findById: jest.fn(),
-    updatePasswordHash: jest.fn(),
-    create: jest.fn(),
+  const participants: jest.Mocked<IParticipantDirectory> = {
+    getRole: jest.fn(),
+    isActive: jest.fn(),
+    getDisplayName: jest.fn(),
   };
 
   const contratacionRepo: jest.Mocked<IContratacionRepository> = {
@@ -347,7 +371,7 @@ function makeMocks() {
 
   const service = new ContratacionService(
     txRunner,
-    userRepo,
+    participants,
     contratacionRepo,
     availabilityService,
     stateMachine,
@@ -357,7 +381,7 @@ function makeMocks() {
     service,
     store,
     txRunner,
-    userRepo,
+    participants,
     contratacionRepo,
     availabilityService,
     stateMachine,
@@ -384,12 +408,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
     const stateMachine = new FakeStateMachine(store);
     const contratacionRepo = new FakeContratacionRepository(store);
 
-    const userRepo: jest.Mocked<IUserRepository> = {
-      findByEmail: jest.fn(),
-      findById: jest.fn().mockResolvedValue(makePrestador()),
-      updatePasswordHash: jest.fn(),
-      create: jest.fn(),
-    };
+    const participants = directoryFor(makePrestador());
 
     const availabilityService: jest.Mocked<IAvailabilityService> = {
       isAvailable: jest.fn().mockResolvedValue(true),
@@ -399,7 +418,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
 
     const service = new ContratacionService(
       txRunner,
-      userRepo,
+      participants,
       contratacionRepo,
       availabilityService,
       stateMachine,
@@ -421,7 +440,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
     const result = await service.confirm(
       'contratacion-uuid-1',
       'cliente-uuid-1',
-      UserRole.CLIENTE,
+      ParticipantRole.CLIENTE,
     );
 
     expect(result.estado).toBe(ContratacionEstado.CONFIRMADA);
@@ -450,7 +469,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
       service.confirm(
         'contratacion-uuid-1',
         'cliente-uuid-1',
-        UserRole.CLIENTE,
+        ParticipantRole.CLIENTE,
       ),
     ).rejects.toThrow(ConflictException);
 
@@ -469,7 +488,11 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
     const before = store.committedHistoryFor('contratacion-uuid-1').length;
 
     await expect(
-      service.cancel('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.cancel(
+        'contratacion-uuid-1',
+        'cliente-uuid-1',
+        ParticipantRole.CLIENTE,
+      ),
     ).rejects.toThrow(ConflictException);
 
     expect(store.committedEstado('contratacion-uuid-1')).toBe(
@@ -494,7 +517,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
       service.start(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow();
 
@@ -517,7 +540,11 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
     const before = store.committedHistoryFor('contratacion-uuid-1').length;
 
     await expect(
-      service.cancel('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.cancel(
+        'contratacion-uuid-1',
+        'cliente-uuid-1',
+        ParticipantRole.CLIENTE,
+      ),
     ).rejects.toThrow();
 
     expect(store.committedEstado('contratacion-uuid-1')).toBe(
@@ -540,7 +567,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
       'contratacion-uuid-1',
       { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
 
     expect(store.committedEstado('contratacion-uuid-1')).toBe(
@@ -558,7 +585,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
       service.finish(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow();
 
@@ -574,7 +601,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
     const created = await service.create(
       makeCreateDto(),
       'cliente-uuid-1',
-      UserRole.CLIENTE,
+      ParticipantRole.CLIENTE,
     );
     expect(created.estado).toBe(ContratacionEstado.SOLICITADA);
     assertConsistent(store, created.id);
@@ -583,24 +610,36 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
       created.id,
       { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
     expect(store.committedEstado(created.id)).toBe(
       ContratacionEstado.PRESUPUESTADA,
     );
     assertConsistent(store, created.id);
 
-    await service.confirm(created.id, 'cliente-uuid-1', UserRole.CLIENTE);
+    await service.confirm(
+      created.id,
+      'cliente-uuid-1',
+      ParticipantRole.CLIENTE,
+    );
     expect(store.committedEstado(created.id)).toBe(
       ContratacionEstado.CONFIRMADA,
     );
     assertConsistent(store, created.id);
 
-    await service.start(created.id, 'prestador-uuid-1', UserRole.PRESTADOR);
+    await service.start(
+      created.id,
+      'prestador-uuid-1',
+      ParticipantRole.PRESTADOR,
+    );
     expect(store.committedEstado(created.id)).toBe(ContratacionEstado.EN_CURSO);
     assertConsistent(store, created.id);
 
-    await service.finish(created.id, 'prestador-uuid-1', UserRole.PRESTADOR);
+    await service.finish(
+      created.id,
+      'prestador-uuid-1',
+      ParticipantRole.PRESTADOR,
+    );
     expect(store.committedEstado(created.id)).toBe(
       ContratacionEstado.FINALIZADA,
     );
@@ -617,7 +656,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
     await service.cancel(
       'contratacion-uuid-1',
       'cliente-uuid-1',
-      UserRole.CLIENTE,
+      ParticipantRole.CLIENTE,
     );
 
     expect(store.committedEstado('contratacion-uuid-1')).toBe(
@@ -638,7 +677,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
     await service.reject(
       'contratacion-uuid-1',
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
 
     expect(store.committedEstado('contratacion-uuid-1')).toBe(
@@ -667,7 +706,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
       'contratacion-uuid-1',
       { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
 
     // Resolves normally; entity + history persisted; invariant holds.
@@ -688,10 +727,10 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
 
 describe('ContratacionService.create()', () => {
   it('ESC-01: valid request → returns ContratacionResponseDto', async () => {
-    const { service, userRepo, contratacionRepo, availabilityService } =
+    const { service, participants, contratacionRepo, availabilityService } =
       makeMocks();
     const dto = makeCreateDto();
-    userRepo.findById.mockResolvedValue(makePrestador());
+    seedDirectory(participants, makePrestador());
     availabilityService.isAvailable.mockResolvedValue(true);
     availabilityService.reserve.mockResolvedValue(undefined);
     contratacionRepo.save.mockImplementation(
@@ -705,7 +744,7 @@ describe('ContratacionService.create()', () => {
     const result = await service.create(
       dto,
       'cliente-uuid-1',
-      UserRole.CLIENTE,
+      ParticipantRole.CLIENTE,
     );
 
     expect(result.id).toBe('contratacion-uuid-1');
@@ -726,44 +765,44 @@ describe('ContratacionService.create()', () => {
   it('RN-CON-01: non-cliente role → ForbiddenException 403', async () => {
     const { service } = makeMocks();
     await expect(
-      service.create(makeCreateDto(), 'user-uuid', UserRole.PRESTADOR),
+      service.create(makeCreateDto(), 'user-uuid', ParticipantRole.PRESTADOR),
     ).rejects.toThrow(ForbiddenException);
     await expect(
-      service.create(makeCreateDto(), 'user-uuid', UserRole.ADMINISTRADOR),
+      service.create(
+        makeCreateDto(),
+        'user-uuid',
+        ParticipantRole.ADMINISTRADOR,
+      ),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it('ESC-05: prestador not found → NotFoundException 404', async () => {
-    const { service, userRepo } = makeMocks();
-    userRepo.findById.mockResolvedValue(null);
+    const { service, participants } = makeMocks();
+    seedDirectory(participants, null);
     await expect(
-      service.create(makeCreateDto(), 'cliente-uuid', UserRole.CLIENTE),
+      service.create(makeCreateDto(), 'cliente-uuid', ParticipantRole.CLIENTE),
     ).rejects.toThrow(NotFoundException);
   });
 
   it('ESC-05: prestador is not a PRESTADOR role → NotFoundException 404', async () => {
-    const { service, userRepo } = makeMocks();
-    userRepo.findById.mockResolvedValue(
-      makePrestador({ role: UserRole.CLIENTE }),
-    );
+    const { service, participants } = makeMocks();
+    seedDirectory(participants, makeCliente());
     await expect(
-      service.create(makeCreateDto(), 'cliente-uuid', UserRole.CLIENTE),
+      service.create(makeCreateDto(), 'cliente-uuid', ParticipantRole.CLIENTE),
     ).rejects.toThrow(NotFoundException);
   });
 
   it('ESC-05: prestador is SUSPENDIDO → NotFoundException 404', async () => {
-    const { service, userRepo } = makeMocks();
-    userRepo.findById.mockResolvedValue(
-      makePrestador({ status: UserStatus.SUSPENDIDO }),
-    );
+    const { service, participants } = makeMocks();
+    seedDirectory(participants, makePrestador({ active: false }));
     await expect(
-      service.create(makeCreateDto(), 'cliente-uuid', UserRole.CLIENTE),
+      service.create(makeCreateDto(), 'cliente-uuid', ParticipantRole.CLIENTE),
     ).rejects.toThrow(NotFoundException);
   });
 
   it('ESC-06: fecha in the past → UnprocessableEntityException 422', async () => {
-    const { service, userRepo } = makeMocks();
-    userRepo.findById.mockResolvedValue(makePrestador());
+    const { service, participants } = makeMocks();
+    seedDirectory(participants, makePrestador());
     const yesterday = new Date(Date.now() - 86400000)
       .toISOString()
       .slice(0, 10);
@@ -771,18 +810,18 @@ describe('ContratacionService.create()', () => {
       service.create(
         makeCreateDto({ fecha: yesterday }),
         'cliente-uuid',
-        UserRole.CLIENTE,
+        ParticipantRole.CLIENTE,
       ),
     ).rejects.toThrow(UnprocessableEntityException);
   });
 
   it('ESC-03: franja not available → ConflictException 409, reserve not called', async () => {
-    const { service, userRepo, availabilityService } = makeMocks();
-    userRepo.findById.mockResolvedValue(makePrestador());
+    const { service, participants, availabilityService } = makeMocks();
+    seedDirectory(participants, makePrestador());
     availabilityService.isAvailable.mockResolvedValue(false);
 
     await expect(
-      service.create(makeCreateDto(), 'cliente-uuid', UserRole.CLIENTE),
+      service.create(makeCreateDto(), 'cliente-uuid', ParticipantRole.CLIENTE),
     ).rejects.toThrow(ConflictException);
 
     expect(availabilityService.reserve).not.toHaveBeenCalled();
@@ -791,13 +830,13 @@ describe('ContratacionService.create()', () => {
   it('ESC-07: state machine fails → rollback + release slot (compensation)', async () => {
     const {
       service,
-      userRepo,
+      participants,
       contratacionRepo,
       availabilityService,
       stateMachine,
     } = makeMocks();
     const dto = makeCreateDto();
-    userRepo.findById.mockResolvedValue(makePrestador());
+    seedDirectory(participants, makePrestador());
     availabilityService.isAvailable.mockResolvedValue(true);
     availabilityService.reserve.mockResolvedValue(undefined);
     contratacionRepo.save.mockImplementation(
@@ -812,7 +851,7 @@ describe('ContratacionService.create()', () => {
     );
 
     await expect(
-      service.create(dto, 'cliente-uuid', UserRole.CLIENTE),
+      service.create(dto, 'cliente-uuid', ParticipantRole.CLIENTE),
     ).rejects.toThrow();
 
     // Slot WAS reserved before the failure → release is the compensation.
@@ -826,12 +865,12 @@ describe('ContratacionService.create()', () => {
   it('ESC-07: reserve fails → release NOT called (slot never reserved)', async () => {
     const {
       service,
-      userRepo,
+      participants,
       contratacionRepo,
       availabilityService,
       stateMachine,
     } = makeMocks();
-    userRepo.findById.mockResolvedValue(makePrestador());
+    seedDirectory(participants, makePrestador());
     availabilityService.isAvailable.mockResolvedValue(true);
     contratacionRepo.save.mockImplementation(
       async (entity: Contratacion): Promise<Contratacion> => ({
@@ -845,7 +884,7 @@ describe('ContratacionService.create()', () => {
     );
 
     await expect(
-      service.create(makeCreateDto(), 'cliente-uuid', UserRole.CLIENTE),
+      service.create(makeCreateDto(), 'cliente-uuid', ParticipantRole.CLIENTE),
     ).rejects.toThrow();
 
     expect(availabilityService.release).not.toHaveBeenCalled();
@@ -875,7 +914,7 @@ describe('ContratacionService.sendProposal()', () => {
       'contratacion-uuid-1',
       { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
 
     expect(result.estado).toBe(ContratacionEstado.PRESUPUESTADA);
@@ -894,7 +933,7 @@ describe('ContratacionService.sendProposal()', () => {
         'contratacion-uuid-1',
         { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
         'cliente-uuid-1',
-        UserRole.CLIENTE,
+        ParticipantRole.CLIENTE,
       ),
     ).rejects.toThrow(ForbiddenException);
   });
@@ -909,7 +948,7 @@ describe('ContratacionService.sendProposal()', () => {
         'contratacion-uuid-1',
         { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(NotFoundException);
   });
@@ -924,7 +963,7 @@ describe('ContratacionService.sendProposal()', () => {
         'contratacion-uuid-1',
         { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(ConflictException);
   });
@@ -940,7 +979,7 @@ describe('ContratacionService.sendProposal()', () => {
         'contratacion-uuid-1',
         { fecha: yesterday, franja: '10:00-11:00', precioEstimado: 150 },
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(UnprocessableEntityException);
   });
@@ -953,7 +992,7 @@ describe('ContratacionService.sendProposal()', () => {
         'contratacion-uuid-1',
         { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 0 },
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(UnprocessableEntityException);
   });
@@ -966,7 +1005,7 @@ describe('ContratacionService.sendProposal()', () => {
         'nonexistent-id',
         { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(NotFoundException);
   });
@@ -993,7 +1032,7 @@ describe('ContratacionService.reject()', () => {
     const result = await service.reject(
       'contratacion-uuid-1',
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
 
     expect(result.estado).toBe(ContratacionEstado.CANCELADA);
@@ -1008,7 +1047,11 @@ describe('ContratacionService.reject()', () => {
     const { service, contratacionRepo } = makeMocks();
     contratacionRepo.findById.mockResolvedValue(null);
     await expect(
-      service.reject('nonexistent-id', 'prestador-uuid-1', UserRole.PRESTADOR),
+      service.reject(
+        'nonexistent-id',
+        'prestador-uuid-1',
+        ParticipantRole.PRESTADOR,
+      ),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -1021,7 +1064,7 @@ describe('ContratacionService.reject()', () => {
       service.reject(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(ConflictException);
   });
@@ -1035,7 +1078,7 @@ describe('ContratacionService.reject()', () => {
       service.reject(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(NotFoundException);
   });
@@ -1043,7 +1086,11 @@ describe('ContratacionService.reject()', () => {
   it('UC08-RE-05: role CLIENTE → ForbiddenException 403', async () => {
     const { service } = makeMocks();
     await expect(
-      service.reject('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.reject(
+        'contratacion-uuid-1',
+        'cliente-uuid-1',
+        ParticipantRole.CLIENTE,
+      ),
     ).rejects.toThrow(ForbiddenException);
   });
 });
@@ -1056,13 +1103,13 @@ describe('ContratacionService.list()', () => {
   }
 
   it('PRESTADOR → filters by prestadorId = userId (isolation)', async () => {
-    const { service, contratacionRepo, userRepo } = makeMocks();
+    const { service, contratacionRepo, participants } = makeMocks();
     contratacionRepo.findByParticipante.mockResolvedValue([makeContratacion()]);
-    userRepo.findById.mockResolvedValue(makeCliente());
+    seedDirectory(participants, makeCliente());
 
     await service.list(
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
       query(ContratacionEstado.SOLICITADA),
     );
 
@@ -1073,11 +1120,11 @@ describe('ContratacionService.list()', () => {
   });
 
   it('CLIENTE → filters by clienteId = userId (MI-09.3 branch)', async () => {
-    const { service, contratacionRepo, userRepo } = makeMocks();
+    const { service, contratacionRepo, participants } = makeMocks();
     contratacionRepo.findByParticipante.mockResolvedValue([]);
-    userRepo.findById.mockResolvedValue(makeCliente());
+    seedDirectory(participants, makeCliente());
 
-    await service.list('cliente-uuid-1', UserRole.CLIENTE, query());
+    await service.list('cliente-uuid-1', ParticipantRole.CLIENTE, query());
 
     expect(contratacionRepo.findByParticipante).toHaveBeenCalledWith({
       clienteId: 'cliente-uuid-1',
@@ -1086,15 +1133,13 @@ describe('ContratacionService.list()', () => {
   });
 
   it('enriches each item with clienteNombre = name + " " + lastName', async () => {
-    const { service, contratacionRepo, userRepo } = makeMocks();
+    const { service, contratacionRepo, participants } = makeMocks();
     contratacionRepo.findByParticipante.mockResolvedValue([makeContratacion()]);
-    userRepo.findById.mockResolvedValue(
-      makeCliente({ name: 'Ana', lastName: 'Gómez' }),
-    );
+    seedDirectory(participants, makeCliente({ displayName: 'Ana Gómez' }));
 
     const result = await service.list(
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
       query(),
     );
 
@@ -1102,13 +1147,13 @@ describe('ContratacionService.list()', () => {
   });
 
   it('null client → clienteNombre placeholder "Cliente"', async () => {
-    const { service, contratacionRepo, userRepo } = makeMocks();
+    const { service, contratacionRepo, participants } = makeMocks();
     contratacionRepo.findByParticipante.mockResolvedValue([makeContratacion()]);
-    userRepo.findById.mockResolvedValue(null);
+    seedDirectory(participants, null);
 
     const result = await service.list(
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
       query(),
     );
 
@@ -1116,15 +1161,15 @@ describe('ContratacionService.list()', () => {
   });
 
   it('preserves repo order (does not reorder)', async () => {
-    const { service, contratacionRepo, userRepo } = makeMocks();
+    const { service, contratacionRepo, participants } = makeMocks();
     const a = makeContratacion({ id: 'a', clienteId: 'c1' });
     const b = makeContratacion({ id: 'b', clienteId: 'c2' });
     contratacionRepo.findByParticipante.mockResolvedValue([b, a]);
-    userRepo.findById.mockResolvedValue(makeCliente());
+    seedDirectory(participants, makeCliente());
 
     const result = await service.list(
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
       query(),
     );
 
@@ -1151,7 +1196,7 @@ describe('ContratacionService.confirm()', () => {
     const result = await service.confirm(
       'contratacion-uuid-1',
       'cliente-uuid-1',
-      UserRole.CLIENTE,
+      ParticipantRole.CLIENTE,
     );
 
     expect(result.estado).toBe(ContratacionEstado.CONFIRMADA);
@@ -1168,7 +1213,7 @@ describe('ContratacionService.confirm()', () => {
       service.confirm(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(ForbiddenException);
   });
@@ -1185,7 +1230,7 @@ describe('ContratacionService.confirm()', () => {
       service.confirm(
         'contratacion-uuid-1',
         'cliente-uuid-1',
-        UserRole.CLIENTE,
+        ParticipantRole.CLIENTE,
       ),
     ).rejects.toThrow(NotFoundException);
   });
@@ -1194,7 +1239,7 @@ describe('ContratacionService.confirm()', () => {
     const { service, contratacionRepo } = makeMocks();
     contratacionRepo.findById.mockResolvedValue(null);
     await expect(
-      service.confirm('nope', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.confirm('nope', 'cliente-uuid-1', ParticipantRole.CLIENTE),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -1207,7 +1252,7 @@ describe('ContratacionService.confirm()', () => {
       service.confirm(
         'contratacion-uuid-1',
         'cliente-uuid-1',
-        UserRole.CLIENTE,
+        ParticipantRole.CLIENTE,
       ),
     ).rejects.toThrow(ConflictException);
   });
@@ -1232,7 +1277,7 @@ describe('ContratacionService.start()', () => {
     const result = await service.start(
       'contratacion-uuid-1',
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
 
     expect(result.estado).toBe(ContratacionEstado.EN_CURSO);
@@ -1246,7 +1291,11 @@ describe('ContratacionService.start()', () => {
   it('UC09-ST-02: role CLIENTE → ForbiddenException 403', async () => {
     const { service } = makeMocks();
     await expect(
-      service.start('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.start(
+        'contratacion-uuid-1',
+        'cliente-uuid-1',
+        ParticipantRole.CLIENTE,
+      ),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -1262,7 +1311,7 @@ describe('ContratacionService.start()', () => {
       service.start(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(NotFoundException);
   });
@@ -1276,7 +1325,7 @@ describe('ContratacionService.start()', () => {
       service.start(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(ConflictException);
   });
@@ -1301,7 +1350,7 @@ describe('ContratacionService.finish()', () => {
     const result = await service.finish(
       'contratacion-uuid-1',
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
 
     expect(result.estado).toBe(ContratacionEstado.FINALIZADA);
@@ -1315,7 +1364,11 @@ describe('ContratacionService.finish()', () => {
   it('UC09-FI-02: role CLIENTE → ForbiddenException 403', async () => {
     const { service } = makeMocks();
     await expect(
-      service.finish('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.finish(
+        'contratacion-uuid-1',
+        'cliente-uuid-1',
+        ParticipantRole.CLIENTE,
+      ),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -1331,7 +1384,7 @@ describe('ContratacionService.finish()', () => {
       service.finish(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(NotFoundException);
   });
@@ -1345,7 +1398,7 @@ describe('ContratacionService.finish()', () => {
       service.finish(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(ConflictException);
   });
@@ -1370,7 +1423,7 @@ describe('ContratacionService.cancel()', () => {
     const result = await service.cancel(
       'contratacion-uuid-1',
       'cliente-uuid-1',
-      UserRole.CLIENTE,
+      ParticipantRole.CLIENTE,
     );
 
     expect(result.estado).toBe(ContratacionEstado.CANCELADA);
@@ -1390,7 +1443,7 @@ describe('ContratacionService.cancel()', () => {
     const result = await service.cancel(
       'contratacion-uuid-1',
       'prestador-uuid-1',
-      UserRole.PRESTADOR,
+      ParticipantRole.PRESTADOR,
     );
 
     expect(result.estado).toBe(ContratacionEstado.CANCELADA);
@@ -1402,7 +1455,11 @@ describe('ContratacionService.cancel()', () => {
       makeContratacion({ estado: ContratacionEstado.CONFIRMADA }),
     );
     await expect(
-      service.cancel('contratacion-uuid-1', 'stranger-uuid', UserRole.CLIENTE),
+      service.cancel(
+        'contratacion-uuid-1',
+        'stranger-uuid',
+        ParticipantRole.CLIENTE,
+      ),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -1410,7 +1467,7 @@ describe('ContratacionService.cancel()', () => {
     const { service, contratacionRepo } = makeMocks();
     contratacionRepo.findById.mockResolvedValue(null);
     await expect(
-      service.cancel('nope', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.cancel('nope', 'cliente-uuid-1', ParticipantRole.CLIENTE),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -1420,7 +1477,11 @@ describe('ContratacionService.cancel()', () => {
       makeContratacion({ estado: ContratacionEstado.FINALIZADA }),
     );
     await expect(
-      service.cancel('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.cancel(
+        'contratacion-uuid-1',
+        'cliente-uuid-1',
+        ParticipantRole.CLIENTE,
+      ),
     ).rejects.toThrow(ConflictException);
   });
 
@@ -1433,7 +1494,7 @@ describe('ContratacionService.cancel()', () => {
       service.cancel(
         'contratacion-uuid-1',
         'prestador-uuid-1',
-        UserRole.PRESTADOR,
+        ParticipantRole.PRESTADOR,
       ),
     ).rejects.toThrow(ConflictException);
   });
@@ -1441,14 +1502,13 @@ describe('ContratacionService.cancel()', () => {
 
 describe('ContratacionService.getDetail()', () => {
   it('cliente participant → detail with enriched names + history (ASC)', async () => {
-    const { service, contratacionRepo, userRepo, stateMachine } = makeMocks();
+    const { service, contratacionRepo, participants, stateMachine } =
+      makeMocks();
     contratacionRepo.findById.mockResolvedValue(
       makeContratacion({ estado: ContratacionEstado.CONFIRMADA }),
     );
-    userRepo.findById.mockImplementation(async (id: string) =>
-      id === 'prestador-uuid-1'
-        ? makePrestador({ name: 'Juan', lastName: 'Pérez' })
-        : makeCliente({ name: 'Ana', lastName: 'Gómez' }),
+    participants.getDisplayName.mockImplementation((id: string) =>
+      Promise.resolve(id === 'prestador-uuid-1' ? 'Juan Pérez' : 'Ana Gómez'),
     );
     stateMachine.getHistory.mockResolvedValue([
       {
@@ -1470,7 +1530,7 @@ describe('ContratacionService.getDetail()', () => {
     const result = await service.getDetail(
       'contratacion-uuid-1',
       'cliente-uuid-1',
-      UserRole.CLIENTE,
+      ParticipantRole.CLIENTE,
     );
 
     expect(result.clienteNombre).toBe('Ana Gómez');
@@ -1487,7 +1547,7 @@ describe('ContratacionService.getDetail()', () => {
       service.getDetail(
         'contratacion-uuid-1',
         'stranger-uuid',
-        UserRole.CLIENTE,
+        ParticipantRole.CLIENTE,
       ),
     ).rejects.toThrow(NotFoundException);
     expect(stateMachine.getHistory).not.toHaveBeenCalled();
@@ -1497,7 +1557,7 @@ describe('ContratacionService.getDetail()', () => {
     const { service, contratacionRepo } = makeMocks();
     contratacionRepo.findById.mockResolvedValue(null);
     await expect(
-      service.getDetail('nope', 'cliente-uuid-1', UserRole.CLIENTE),
+      service.getDetail('nope', 'cliente-uuid-1', ParticipantRole.CLIENTE),
     ).rejects.toThrow(NotFoundException);
   });
 });

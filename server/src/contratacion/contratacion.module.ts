@@ -5,6 +5,7 @@ import { User } from '../auth/domain/user.entity.js';
 import { USER_REPOSITORY } from '../auth/ports/user.repository.port.js';
 import { PersistenceModule } from '../persistence/persistence.module.js';
 import { StateMachineModule } from '../state-machine/state-machine.module.js';
+import { AuthParticipantDirectory } from './adapters/auth-participant-directory.adapter.js';
 import { TypeOrmContratacionRepository } from './adapters/typeorm-contratacion.repository.js';
 import { ContratacionService } from './application/contratacion.service.js';
 import { ContratacionController } from './contratacion.controller.js';
@@ -14,6 +15,7 @@ import {
   type IAvailabilityService,
 } from './ports/availability-service.port.js';
 import { CONTRATACION_REPOSITORY } from './ports/contratacion-repository.port.js';
+import { PARTICIPANT_DIRECTORY } from './ports/participant-directory.port.js';
 
 /**
  * Stub adapter for AvailabilityService — no-op until UC06 (agenda) is implemented.
@@ -71,6 +73,12 @@ class StubAvailabilityService implements IAvailabilityService {
     {
       provide: USER_REPOSITORY,
       useClass: TypeOrmUserRepository,
+    },
+    {
+      // Integration seam (ADR-001 / C5): contratación talks to the user
+      // directory only through its own port; the adapter bridges to auth.
+      provide: PARTICIPANT_DIRECTORY,
+      useClass: AuthParticipantDirectory,
     },
     {
       provide: AVAILABILITY_SERVICE,

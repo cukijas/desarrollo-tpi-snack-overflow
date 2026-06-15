@@ -83,6 +83,32 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "coverageThreshold": {
+      "./src/auth/application/": {
+        "statements": 90,
+        "branches": 90,
+        "functions": 90,
+        "lines": 90
+      },
+      "./src/catalogo/application/": {
+        "statements": 90,
+        "branches": 80,
+        "functions": 90,
+        "lines": 90
+      },
+      "./src/contratacion/application/": {
+        "statements": 90,
+        "branches": 90,
+        "functions": 90,
+        "lines": 90
+      },
+      "./src/state-machine/application/": {
+        "statements": 90,
+        "branches": 80,
+        "functions": 90,
+        "lines": 90
+      }
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

@@ -28,6 +28,26 @@ import { UserStatus } from '../domain/user-status.enum.js';
 import { getCoordsForLocalidad } from '../../catalogo/domain/cobertura-util.js';
 import { CoberturaZona } from '../../catalogo/domain/cobertura-zona.value.js';
 
+/**
+ * Trade value → categoria (display) mapping.
+ * Mirrors the exact labels from client/lib/trades.ts so the catalog search
+ * (which does `categoria = :oficio` with the TRADE LABEL) always matches.
+ */
+const TRADE_CATEGORIA: Record<string, string> = {
+  electricista: 'Electricista',
+  gasista: 'Gasista',
+  plomero: 'Plomero',
+  'tecnico-refrigeracion': 'Técnico en refrigeración',
+  albanil: 'Albañil',
+  carpintero: 'Carpintero',
+  pintor: 'Pintor',
+  herrero: 'Herrero',
+  jardinero: 'Jardinero',
+  techista: 'Techista',
+  cerrajero: 'Cerrajero',
+  fletero: 'Fletero',
+};
+
 @Injectable()
 export class RegistrationService {
   private readonly logger = new Logger(RegistrationService.name);
@@ -40,18 +60,6 @@ export class RegistrationService {
     private readonly prestadorRepo: IPrestadorRepository,
     private readonly dataSource: DataSource,
   ) {}
-
-  /**
-   * Capitalizes the first letter of each word separated by hyphens or spaces.
-   * E.g., "electricista" → "Electricista", "tecnico-refrigeracion" → "Técnico Refrigeración"
-   * This matches the client-side TRADES label format for server-side categoria mapping.
-   */
-  private capitalizeTradeLabel(trade: string): string {
-    return trade
-      .split(/[- ]/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  }
 
   async register(dto: RegisterDto): Promise<RegisterResponseDto> {
     // Step 1: Normalize email to lowercase
@@ -115,8 +123,9 @@ export class RegistrationService {
         ? ProviderStatus.PENDIENTE_HABILITACION
         : ProviderStatus.HABILITADO;
 
-      // Build categoria from trade value (capitalized label for search matching)
-      const categoria = this.capitalizeTradeLabel(dto.trade);
+      // Build categoria from trade value using label map (search does
+      // exact match against the TRADE label, e.g. "Albañil" not "albanil").
+      const categoria = TRADE_CATEGORIA[dto.trade.toLowerCase()] ?? dto.trade;
 
       // Generate zona_cobertura as 16.5km circle around localidad
       const zonaCobertura = CoberturaZona.fromCircle(

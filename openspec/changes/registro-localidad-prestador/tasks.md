@@ -17,10 +17,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 1: Backend Foundation
 
-- [ ] 1.1 Create `server/src/catalogo/domain/cobertura-util.ts` with `localidadToCoords` map (17 cities) + `getCoordsForLocalidad()` helper
-- [ ] 1.2 Add `CreatePrestadorData` interface + `create(data, qr?)` to `IPrestadorRepository`
-- [ ] 1.3 Implement `create()` in `TypeOrmPrestadorRepository` using `qr?.manager.save() ?? this.repo.save()`
-- [ ] 1.4 Create `server/src/auth/ports/prestador-repository.port.ts` re-exporting IPrestadorRepository + PRESTADOR_REPOSITORY token
+- [x] 1.1 Create `server/src/catalogo/domain/cobertura-util.ts` with `localidadToCoords` map (17 cities) + `getCoordsForLocalidad()` helper
+- [x] 1.2 Add `CreatePrestadorData` interface + `create(data, qr?)` to `IPrestadorRepository`
+- [x] 1.3 Implement `create()` in `TypeOrmPrestadorRepository` using `qr?.manager.save() ?? this.repo.save()`
+- [x] 1.4 Create `server/src/auth/ports/prestador-repository.port.ts` re-exporting IPrestadorRepository + PRESTADOR_REPOSITORY token
 
 ## Phase 2: Auth Service Transaction
 

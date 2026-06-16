@@ -40,11 +40,25 @@ export const localidadToCoords: Record<string, Coordenadas> = {
 };
 
 /**
- * Returns coordinates for a given localidad.
+ * Labels from client/lib/catalogo/ubicaciones.ts follow one of two formats:
+ *   - City entry:  "Posadas"
+ *   - Barrio entry: "Posadas — Centro"
+ * This extracts the city name from either format.
+ */
+const LABEL_SEPARATOR = ' — ';
+
+export function extractCiudad(localidad: string): string {
+  const idx = localidad.indexOf(LABEL_SEPARATOR);
+  return idx === -1 ? localidad : localidad.slice(0, idx);
+}
+
+/**
+ * Returns coordinates for a given localidad (city name or "Ciudad — Barrio" label).
  * Throws if the localidad is not in the map.
  */
 export function getCoordsForLocalidad(localidad: string): Coordenadas {
-  const coords = localidadToCoords[localidad];
+  const ciudad = extractCiudad(localidad);
+  const coords = localidadToCoords[ciudad];
   if (!coords) {
     throw new Error(`Unknown localidad: "${localidad}". No coordinates available.`);
   }

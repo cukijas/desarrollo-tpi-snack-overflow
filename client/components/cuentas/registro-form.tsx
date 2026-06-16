@@ -73,8 +73,14 @@ export function RegistroForm() {
   const isPrestador = role === "prestador";
   const showRegulatedNotice = isPrestador && trade !== "" && isRegulatedTrade(trade);
 
-  // Derive unique cities from UBICACIONES for the localidad select (only for prestador).
-  const LOCALIDADES = Array.from(new Set(UBICACIONES.map((u) => u.ciudad))).sort();
+  // Show all UBICACIONES entries (cities + barrios like "Posadas — Centro").
+  // Barrios use the "Ciudad — Barrio" label; the backend extracts the ciudad for coordinates.
+  const LOCALIDADES = [...UBICACIONES].sort((a, b) => {
+    if (a.ciudad !== b.ciudad) return a.ciudad.localeCompare(b.ciudad);
+    if (a.barrio === null) return -1;
+    if (b.barrio === null) return 1;
+    return a.barrio.localeCompare(b.barrio);
+  });
 
   // Move focus to the global error summary when it appears (§8, REQ-07.3).
   useEffect(() => {
@@ -388,9 +394,9 @@ export function RegistroForm() {
                 <SelectValue placeholder={copy.registro.localidadPlaceholder} />
               </SelectTrigger>
               <SelectContent>
-                {LOCALIDADES.map((ciudad) => (
-                  <SelectItem key={ciudad} value={ciudad}>
-                    {ciudad}
+                {LOCALIDADES.map((u) => (
+                  <SelectItem key={u.id} value={u.label}>
+                    {u.label}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -1,294 +1,172 @@
 @startuml
-title 11.c — Modelo Relacional de Base de Datos (Lógico)
 
 hide circle
-skinparam linetype ortho
-skinparam nodesep 50
-skinparam ranksep 50
-skinparam packageStyle rectangle
-skinparam classAttributeIconSize 0
-hide empty members
 
-skinparam class {
-    BackgroundColor<<tabla>>       #EDEFF7
-    BorderColor<<tabla>>           #3B4A8C
-    FontColor<<tabla>>             #1A1F3D
-    HeaderFontColor<<tabla>>       #1A1F3D
-    HeaderFontStyle<<tabla>>       bold
+entity Usuario {
+  id : uuid <<PK>>
+  --
+  nombre : varchar
+  apellido : varchar
+  email : varchar
+  hash_contraseña : varchar
+    telefono : varchar
+  es_administrador : bool
+  estado : varchar
+    intentos_fallidos : int
+    bloqueado_hasta : timestamp
+  fecha_registro : timestamp
 }
 
-skinparam package {
-    BackgroundColor #F8F8FC
-    BorderColor     #9498B0
-    FontColor       #2C3070
-    FontStyle       bold
+entity Prestador {
+  id_usuario : uuid <<PK, FK>>
+  --
+    zonas_cobertura : varchar
+  estado_verificacion : varchar
+    fecha_verificacion : timestamp
+    id_admin_verificador : uuid <<FK>>
 }
 
-!include ../../00_Comun/00.0_Estilo_Comun.iuml
-
-' ===========================================================================
-' PACKAGE 1 — Usuarios y Seguridad
-' ===========================================================================
-package "Usuarios y Seguridad" as P1 {
-
-    entity "Usuarios" as usuarios <<tabla>> {
-        * id_usuario : INT <<generated>>
-        --
-        nombre : VARCHAR(100)
-        apellido : VARCHAR(100)
-        email : VARCHAR(150) <<unique>>
-        password_hash : VARCHAR(255)
-        telefono : VARCHAR(20)
-        rol : ENUM('Cliente', 'Prestador', 'Administrador')
-        estado : ENUM('Activo', 'Suspendido', 'Baja')
-        intentos_fallidos : INT
-        bloqueado_hasta : TIMESTAMP
-        fecha_registro : TIMESTAMP
-    }
-
-    entity "Clientes" as clientes <<tabla>> {
-        * id_cliente : INT <<generated>> <<FK>>
-        --
-        direccion_predeterminada : VARCHAR(255)
-    }
-
-    entity "Prestadores" as prestadores <<tabla>> {
-        * id_prestador : INT <<generated>> <<FK>>
-        --
-        bio_descripcion : TEXT
-        zonas_cobertura : TEXT
-        estado_verificacion : ENUM('Pendiente', 'Verificado', 'Rechazado')
-        fecha_verificacion : TIMESTAMP
-        id_admin_verificador : INT <<FK>>
-    }
-
-    entity "Tokens_Seguridad" as tokens <<tabla>> {
-        * id_token : INT <<generated>>
-        --
-        id_usuario : INT <<FK>>
-        token_hash : VARCHAR(255)
-        tipo_token : ENUM('Recuperacion_Password', 'Sesion')
-        fecha_expiracion : TIMESTAMP
-        utilizado : BOOLEAN
-    }
-
+entity Categoria_Oficio {
+  id : uuid <<PK>>
+  --
+  nombre_categoria : varchar
+    descripcion : varchar
 }
 
-' ===========================================================================
-' PACKAGE 2 — Catálogo de Oficios
-' ===========================================================================
-package "Catálogo de Oficios" as P2 {
-
-    entity "Categorias_Oficio" as categorias <<tabla>> {
-        * id_categoria : INT <<generated>>
-        --
-        nombre_categoria : VARCHAR(100) <<unique>>
-        descripcion : TEXT
-    }
-
-    entity "Oficios" as oficios <<tabla>> {
-        * id_oficio : INT <<generated>>
-        --
-        id_categoria : INT <<FK>>
-        nombre_oficio : VARCHAR(100)
-        requiere_matricula : BOOLEAN
-    }
-
+entity Oficio {
+  id : uuid <<PK>>
+  --
+  id_categoria : uuid <<FK>>
+  nombre_oficio : varchar
+  requiere_matricula : boolean
 }
 
-' ===========================================================================
-' PACKAGE 3 — Servicios y Agenda
-' ===========================================================================
-package "Servicios y Agenda" as P3 {
-
-    entity "Servicios_Publicados" as servicios <<tabla>> {
-        * id_servicio : INT <<generated>>
-        --
-        id_prestador : INT <<FK>>
-        id_oficio : INT <<FK>>
-        titulo : VARCHAR(150)
-        descripcion : TEXT
-        precio_base_estimado : DECIMAL(10,2)
-        activo : BOOLEAN
-    }
-
-    entity "Disponibilidad_Agenda" as agenda <<tabla>> {
-        * id_disponibilidad : INT <<generated>>
-        --
-        id_prestador : INT <<FK>>
-        dia_semana : INT
-        fecha_especifica : DATE
-        hora_inicio : TIME
-        hora_fin : TIME
-        es_disponible : BOOLEAN
-    }
-
+entity Servicio_Publicado {
+  id : uuid <<PK>>
+  --
+  id_prestador : uuid <<FK>>
+  id_oficio : uuid <<FK>>
+  titulo : varchar
+    descripcion : varchar
+    precio_base_estimado : decimal
+  activo : boolean
 }
 
-' ===========================================================================
-' PACKAGE 4 — Habilitaciones Profesionales
-' ===========================================================================
-package "Habilitaciones Profesionales" as P4 {
-
-    entity "Habilitaciones_Profesionales" as habilitaciones <<tabla>> {
-        * id_habilitacion : INT <<generated>>
-        --
-        id_prestador : INT <<FK>>
-        id_oficio : INT <<FK>>
-        numero_matricula : VARCHAR(50)
-        organismo_regulador : VARCHAR(150)
-        url_documento_adjunto : VARCHAR(255)
-        estado_matricula : ENUM('Pendiente', 'Vigente', 'Invalida')
-    }
-
+entity Disponibilidad_Recurrente {
+  id : uuid <<PK>>
+  --
+  id_prestador : uuid <<FK>>
+  dia_semana : int
+  hora_inicio : varchar
+  hora_fin : varchar
+  disponible : boolean
 }
 
-' ===========================================================================
-' PACKAGE 5 — Contratación y Seguimiento
-' ===========================================================================
-package "Contratación y Seguimiento" as P5 {
-
-    entity "Contrataciones" as contrataciones <<tabla>> {
-        * id_contratacion : INT <<generated>>
-        --
-        id_cliente : INT <<FK>>
-        id_servicio : INT <<FK>>
-        descripcion_problema : TEXT
-        direccion_servicio : VARCHAR(255)
-        localidad : VARCHAR(100)
-        fecha_servicio : DATE
-        franja_horaria_inicio : TIME
-        franja_horaria_fin : TIME
-        precio_acordado : DECIMAL(10,2)
-        estado_contratacion : ENUM(
-          'Solicitada',
-          'Propuesta_Prestador',
-          'Aceptada',
-          'Rechazada',
-          'Cancelada',
-          'Iniciada',
-          'Finalizada')
-        fecha_creacion : TIMESTAMP
-        fecha_actualizacion : TIMESTAMP
-    }
-
-    entity "Historial_Estados_Contratacion" as historial <<tabla>> {
-        * id_historial : INT <<generated>>
-        --
-        id_contratacion : INT <<FK>>
-        estado_anterior : VARCHAR(50)
-        estado_nuevo : VARCHAR(50)
-        fecha_cambio : TIMESTAMP
-        motivo : TEXT
-        cambiado_por_usuario_id : INT <<FK>>
-    }
-
+entity Excepcion_Agenda {
+  id : uuid <<PK>>
+  --
+  id_prestador : uuid <<FK>>
+  fecha : date
 }
 
-' ===========================================================================
-' PACKAGE 6 — Mensajería
-' ===========================================================================
-package "Mensajería" as P6 {
-
-    entity "Mensajes_Chat" as chat <<tabla>> {
-        * id_mensaje : INT <<generated>>
-        --
-        id_contratacion : INT <<FK>>
-        id_emisor : INT <<FK>>
-        contenido : TEXT
-        fecha_envio : TIMESTAMP
-        leido : BOOLEAN
-    }
-
+entity Organismo_Regulador {
+  id : uuid <<PK>>
+  --
+  razon_social : varchar
+    region : varchar
 }
 
-' ===========================================================================
-' PACKAGE 7 — Pagos
-' ===========================================================================
-package "Pagos" as P7 {
-
-    entity "Pagos" as pagos <<tabla>> {
-        * id_pago : INT <<generated>>
-        --
-        id_contratacion : INT <<FK>>
-        id_transaccion_externa : VARCHAR(150)
-        monto : DECIMAL(10,2)
-        estado_pago : ENUM('Pendiente', 'Retenido', 'Liberado', 'Reembolsado')
-        fecha_pago : TIMESTAMP
-        fecha_liberacion : TIMESTAMP
-    }
-
+entity Habilitacion_Profesional {
+  id : uuid <<PK>>
+  --
+  id_prestador : uuid <<FK>>
+  id_oficio : uuid <<FK>>
+  id_organismo_regulador : uuid <<FK>>
+  matricula : varchar
+    documento : blob
+  estado_matricula : varchar
 }
 
-' ===========================================================================
-' PACKAGE 8 — Reseñas y Moderación
-' ===========================================================================
-package "Reseñas y Moderación" as P8 {
-
-    entity "Resenas_Calificaciones" as resenas <<tabla>> {
-        * id_resena : INT <<generated>>
-        --
-        id_contratacion : INT <<FK>> <<unique>>
-        calificacion : INT(1-5)
-        comentario_cliente : TEXT
-        fecha_resena : TIMESTAMP
-        respuesta_prestador : TEXT
-        fecha_respuesta : TIMESTAMP
-        estado_moderacion : ENUM('Aprobada', 'Pendiente', 'Oculta')
-        id_admin_moderador : INT <<FK>>
-        motivo_ocultamiento : VARCHAR(255)
-    }
-
+entity Contratacion {
+  id : uuid <<PK>>
+  --
+  id_cliente : uuid <<FK>>
+  id_servicio : uuid <<FK>>
+  descripcion_problema : varchar
+  direccion_servicio : varchar
+  localidad : varchar
+  fecha_servicio : date
+  franja_horaria_inicio : varchar
+  franja_horaria_fin : varchar
+    precio_acordado : decimal
+  estado_contratacion : varchar
+  fecha_creacion : timestamp
+    fecha_actualizacion : timestamp
 }
 
-' ===========================================================================
-' RELACIONES
-' ===========================================================================
-' P1: Usuarios y Seguridad
-usuarios ||--o| clientes : "1 → 0..1 (es un)"
-usuarios ||--o| prestadores : "1 → 0..1 (es un)"
-usuarios ||--o{ tokens : "1 → * (tiene)"
-usuarios ||--o{ historial : "1 → * (audita cambio)"
-usuarios ||--o{ chat : "1 → * (envía)"
-usuarios ||--o{ resenas : "1 → * (modera)"
-prestadores }o--|| usuarios : "* → 1 (verificado por)"
+entity Estado_Contratacion {
+  id : uuid <<PK>>
+  --
+  id_contratacion : uuid <<FK>>
+  cambiado_por_usuario_id : uuid <<FK>>
+    estado_anterior : varchar
+  estado_nuevo : varchar
+  fecha_cambio : timestamp
+    motivo : varchar
+}
 
-' P2: Catálogo
-categorias ||--o{ oficios : "1 → * (clasifica)"
+entity Mensaje_Chat {
+  id : uuid <<PK>>
+  --
+  id_contratacion : uuid <<FK>>
+  id_emisor : uuid <<FK>>
+  contenido : varchar
+  fecha_envio : timestamp
+}
 
-' P3: Servicios y Agenda
-oficios ||--o{ habilitaciones : "1 → * (requiere)"
-oficios ||--o{ servicios : "1 → * (corresponde)"
-prestadores ||--o{ servicios : "1 → * (publica)"
-prestadores ||--o{ agenda : "1 → * (configura)"
-prestadores ||--o{ habilitaciones : "1 → * (posee)"
+entity Pago {
+  id : uuid <<PK>>
+  --
+  id_contratacion : uuid <<FK>>
+    id_transaccion_externa : varchar
+  monto : decimal
+  estado_pago : varchar
+  fecha_pago : timestamp
+    fecha_liberacion : timestamp
+}
 
-' P5: Contratación
-clientes ||--o{ contrataciones : "1 → * (solicita)"
-servicios ||--o{ contrataciones : "1 → * (genera)"
-contrataciones ||--o{ historial : "1 → * (registra)"
-contrataciones ||--o{ chat : "1 → * (contiene)"
-contrataciones ||--o| pagos : "1 → 0..1 (abona)"
-contrataciones ||--o| resenas : "1 → 0..1 (recibe)"
+entity Reseña {
+  id : uuid <<PK>>
+  --
+  id_contratacion : uuid <<FK>>
+    id_admin_moderador : uuid <<FK>>
+  calificacion : int
+  comentario_cliente : varchar
+  fecha_reseña : timestamp
+    respuesta_prestador : varchar
+    fecha_respuesta : timestamp
+  estado_moderacion : varchar
+}
 
-' ===========================================================================
-' LEYENDA
-' ===========================================================================
-legend right
-  | Color | Significado |
-  |<#EDEFF7>| **Tabla**
-  ----
-  <<generated>> = Autoincremental
-  <<FK>>        = Clave foránea
-  <<unique>>    = Unique
-  **1 → ***     = Uno a muchos
-  **1 → 0..1**  = Uno a cero/uno
-endlegend
-
-note bottom of contrataciones
-  Máquina de estados:
-  Solicitada → Propuesta_Prestador → Aceptada → Iniciada → Finalizada
-  (cualquier estado admite Cancelada o Rechazada)
-endnote
+' Relaciones
+Usuario ||--o| Prestador : "es un"
+Usuario ||--o{ Estado_Contratacion : "audita"
+Usuario ||--o{ Mensaje_Chat : "envia"
+Usuario ||--o{ Reseña : "modera"
+Prestador }o--|| Usuario : "verificado por"
+Categoria_Oficio ||..o{ Oficio : "clasifica"
+Oficio ||--o{ Habilitacion_Profesional : "requiere"
+Oficio ||--o{ Servicio_Publicado : "corresponde"
+Prestador ||--o{ Servicio_Publicado : "publica"
+Prestador ||--o{ Disponibilidad_Recurrente : "configura"
+Prestador ||--o{ Excepcion_Agenda : "configura"
+Prestador ||--o{ Habilitacion_Profesional : "posee"
+Usuario ||--o{ Contratacion : "solicita"
+Servicio_Publicado ||--o{ Contratacion : "genera"
+Contratacion ||--o{ Estado_Contratacion : "registra"
+Contratacion ||--o{ Mensaje_Chat : "contiene"
+Contratacion ||--o| Pago : "abona"
+Contratacion ||--o| Reseña : "recibe"
+Organismo_Regulador ||--o{ Habilitacion_Profesional : "habilita"
 
 @enduml
